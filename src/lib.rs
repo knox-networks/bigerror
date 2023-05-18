@@ -22,6 +22,9 @@ where
     fn with_kv_debug<A>(key: &str, value: A) -> Report<Self>
     where
         A: std::fmt::Debug + Send + Sync + 'static;
+    fn report_with_kv<A, E: Context>(e: E, key: &str, value: A) -> Report<Self>
+    where
+        A: fmt::Display + fmt::Debug + Send + Sync + 'static;
 }
 
 // TODO convert to #[derive(Reportable)]
@@ -68,6 +71,20 @@ macro_rules! reportable {
             {
                 use $crate::AttachExt;
                 $crate::error_stack::Report::new(Self).attach_kv_debug(key, value)
+            }
+            #[track_caller]
+            fn report_with_kv<A, E: Context>(
+                e: E,
+                key: &str,
+                value: A,
+            ) -> $crate::error_stack::Report<Self>
+            where
+                A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+            {
+                use $crate::AttachExt;
+                $crate::error_stack::Report::new(e)
+                    .change_context(Self)
+                    .attach_kv(key, value)
             }
         }
     };
