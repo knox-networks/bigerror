@@ -2,7 +2,7 @@ use std::{fmt, path::Path};
 use tracing::error;
 
 pub use error_stack;
-pub use error_stack::{Context, Report, ResultExt};
+pub use error_stack::{Context, IntoReport, Report, ResultExt};
 pub use thiserror;
 
 pub trait Reportable
@@ -144,14 +144,12 @@ impl InvalidInput {
 
 impl ConversionError {
     #[track_caller]
-    #[allow(dead_code)]
-    fn new<T>(from: T, to: T) -> Report<Self>
-    where
-        T: fmt::Debug + Send + Sync + 'static,
-    {
+    pub fn new<F: ?Sized, T: ?Sized>() -> Report<Self> {
+        let from = std::any::type_name::<F>();
+        let to = std::any::type_name::<T>();
         Report::new(Self)
-            .attach_printable(format!("from: {from:?}"))
-            .attach_printable(format!("to: {to:?}"))
+            .attach_printable(format!("from: {from}"))
+            .attach_printable(format!("to: {to}"))
     }
 }
 
