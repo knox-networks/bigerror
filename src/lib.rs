@@ -1,8 +1,8 @@
-use error_stack::{Context, Report, ResultExt};
 use std::{fmt, path::Path};
 use tracing::error;
 
 pub use error_stack;
+pub use error_stack::{Context, Report, ResultExt};
 pub use thiserror;
 
 pub trait Reportable
@@ -33,56 +33,56 @@ macro_rules! reportable {
     ($context:ident) => {
         impl $crate::Reportable for $context {
             #[track_caller]
-            fn report<E>(e: E) -> $crate::error_stack::Report<Self>
+            fn report<E>(e: E) -> $crate::Report<Self>
             where
-                E: $crate::error_stack::Context,
+                E: $crate::Context,
             {
-                $crate::error_stack::Report::new(e).change_context(Self)
+                $crate::Report::new(e).change_context(Self)
             }
 
             #[track_caller]
-            fn attach<A>(value: A) -> $crate::error_stack::Report<Self>
+            fn attach<A>(value: A) -> $crate::Report<Self>
             where
                 A: fmt::Display + std::fmt::Debug + Send + Sync + 'static,
             {
-                $crate::error_stack::Report::new(Self).attach_printable(value)
+                $crate::Report::new(Self).attach_printable(value)
             }
 
             #[track_caller]
-            fn attach_debug<A>(value: A) -> $crate::error_stack::Report<Self>
+            fn attach_debug<A>(value: A) -> $crate::Report<Self>
             where
                 A: std::fmt::Debug + Send + Sync + 'static,
             {
-                $crate::error_stack::Report::new(Self).attach_printable(format!("{value:?}"))
+                $crate::Report::new(Self).attach_printable(format!("{value:?}"))
             }
 
             #[track_caller]
-            fn with_kv<A>(key: &str, value: A) -> $crate::error_stack::Report<Self>
+            fn with_kv<A>(key: &str, value: A) -> $crate::Report<Self>
             where
                 A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
             {
                 use $crate::AttachExt;
-                $crate::error_stack::Report::new(Self).attach_kv(key, value)
+                $crate::Report::new(Self).attach_kv(key, value)
             }
             #[track_caller]
-            fn with_kv_debug<A>(key: &str, value: A) -> $crate::error_stack::Report<Self>
+            fn with_kv_debug<A>(key: &str, value: A) -> $crate::Report<Self>
             where
                 A: std::fmt::Debug + Send + Sync + 'static,
             {
                 use $crate::AttachExt;
-                $crate::error_stack::Report::new(Self).attach_kv_debug(key, value)
+                $crate::Report::new(Self).attach_kv_debug(key, value)
             }
             #[track_caller]
-            fn report_with_kv<A, E: Context>(
+            fn report_with_kv<A, E: $crate::Context>(
                 e: E,
                 key: &str,
                 value: A,
-            ) -> $crate::error_stack::Report<Self>
+            ) -> $crate::Report<Self>
             where
                 A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
             {
                 use $crate::AttachExt;
-                $crate::error_stack::Report::new(e)
+                $crate::Report::new(e)
                     .change_context(Self)
                     .attach_kv(key, value)
             }
@@ -145,13 +145,13 @@ impl InvalidInput {
 impl ConversionError {
     #[track_caller]
     #[allow(dead_code)]
-    fn new<A>(from: A, to: A) -> Report<Self>
+    fn new<T>(from: T, to: T) -> Report<Self>
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static,
+        T: fmt::Debug + Send + Sync + 'static,
     {
         Report::new(Self)
-            .attach_printable(format!("from: {from}"))
-            .attach_printable(format!("to: {to}"))
+            .attach_printable(format!("from: {from:?}"))
+            .attach_printable(format!("to: {to:?}"))
     }
 }
 
@@ -448,11 +448,11 @@ macro_rules! from_report {
 macro_rules! to_report {
     (impl ToReport<$reportable:path> for $for:ident::$variant:ident) => {
         impl $crate::ToReport<$reportable> for $for {
-            fn to_report(self) -> $crate::error_stack::Report<$reportable> {
+            fn to_report(self) -> $crate::Report<$reportable> {
                 #[allow(unreachable_patterns)]
                 match self {
                     Self::$variant(inner) => inner,
-                    _ => $crate::error_stack::Report::new(self).change_context($reportable),
+                    _ => $crate::Report::new(self).change_context($reportable),
                 }
             }
         }
