@@ -43,7 +43,7 @@ macro_rules! reportable {
             #[track_caller]
             fn attach<A>(value: A) -> $crate::Report<Self>
             where
-                A: fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+                A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
             {
                 $crate::Report::new(Self).attach_printable(value)
             }
