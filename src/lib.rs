@@ -379,7 +379,7 @@ macro_rules! from_report {
         $(impl From<$t> for $for {
             #[track_caller]
             fn from(e: $t) -> Self {
-                let report = error_stack::Report::new(e)
+                let report = $crate::Report::new(e)
                 $(.change_context($t_context))*
                   .change_context($inner);
                 Self::$variant(report)
@@ -387,9 +387,9 @@ macro_rules! from_report {
         })*
 
         // Report<T>
-        $(impl From<error_stack::Report<$report_t>> for $for {
+        $(impl From<$crate::Report<$report_t>> for $for {
             #[track_caller]
-            fn from(r: error_stack::Report<$report_t>) -> Self {
+            fn from(r: $crate::Report<$report_t>) -> Self {
                 Self::$variant(r.change_context($inner))
             }
         })*
@@ -405,17 +405,17 @@ macro_rules! from_report {
             }
         })*
         // original
-        impl From<error_stack::Report<$inner>> for $for {
+        impl From<$crate::Report<$inner>> for $for {
             #[track_caller]
-            fn from(r: error_stack::Report<$inner>) -> Self {
+            fn from(r: $crate::Report<$inner>) -> Self {
                 Self::$variant(r)
             }
         }
     };
     (impl From<Report<$from:path>> for $for:ident::$variant:ident) => {
-        impl From<error_stack::Report<$from>> for $for {
+        impl From<$crate::Report<$from>> for $for {
             #[track_caller]
-            fn from(r: error_stack::Report<$from>) -> Self {
+            fn from(r: $crate::Report<$from>) -> Self {
                 Self::$variant(r)
             }
         }
@@ -434,7 +434,7 @@ macro_rules! from_report {
         impl From<$from> for $for {
             #[track_caller]
             fn from(e: $from) -> Self {
-                let report = error_stack::Report::new(e)
+                let report = $crate::Report::new(e)
                     $(.change_context($context))* ;
                 Self::$variant(report)
             }
