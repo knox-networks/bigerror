@@ -27,6 +27,20 @@ where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
 }
 
+pub trait ReportAs: Sized {
+    /// Type of the [`Ok`] value in the [`Result`]
+    type Ok;
+
+    fn report_as<C: Reportable>(self) -> Result<Self::Ok, Report<C>>;
+}
+
+impl<T, E: Context> ReportAs for Result<T, E> {
+    type Ok = T;
+    fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
+        self.map_err(C::report)
+    }
+}
+
 // TODO convert to #[derive(Reportable)]
 #[macro_export]
 macro_rules! reportable {
