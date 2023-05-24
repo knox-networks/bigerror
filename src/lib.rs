@@ -27,6 +27,16 @@ where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
 }
 
+pub trait ReportableExt: Context + Reportable + Default + Sized {
+    fn report_inner<E, C>(e: E) -> Report<Self>
+    where
+        C: Context,
+        E: ToReport<C>,
+    {
+        e.to_report().change_context(Self::default())
+    }
+}
+
 pub trait ReportAs: Sized {
     /// Type of the [`Ok`] value in the [`Result`]
     type Ok;
