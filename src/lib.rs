@@ -154,6 +154,11 @@ impl InvalidInput {
         let path = path.as_ref().display().to_string();
         Report::new(Self).attach_kv("path", path)
     }
+
+    pub fn type_name<T: ?Sized>() -> Report<Self> {
+        let type_name = std::any::type_name::<T>();
+        Report::new(Self).attach_printable(format!("type: {type_name}"))
+    }
 }
 
 impl ConversionError {
