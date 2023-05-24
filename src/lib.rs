@@ -171,6 +171,12 @@ impl InvalidInput {
         let type_name = std::any::type_name::<T>();
         Report::new(Self).attach_printable(format!("type: {type_name}"))
     }
+    pub fn expected_actual<A>(expected: A, actual: A) -> Report<Self>
+    where
+        A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+    {
+        Self::with_kv("expected", expected).attach_kv("actual", actual)
+    }
 }
 
 impl ConversionError {
