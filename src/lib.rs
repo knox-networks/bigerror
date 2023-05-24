@@ -7,7 +7,7 @@ pub use thiserror;
 
 pub trait Reportable
 where
-    Self: Sized,
+    Self: Sized + Context,
 {
     fn report<E: Context>(e: E) -> Report<Self>;
     fn attach<A>(value: A) -> Report<Self>
@@ -25,16 +25,10 @@ where
     fn report_with_kv<A, E: Context>(e: E, key: &str, value: A) -> Report<Self>
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
-}
-
-pub trait ReportableExt: Context + Reportable + Default + Sized {
     fn report_inner<E, C>(e: E) -> Report<Self>
     where
         C: Context,
-        E: ToReport<C>,
-    {
-        e.to_report().change_context(Self::default())
-    }
+        E: ToReport<C>;
 }
 
 pub trait ReportAs: Sized {
@@ -109,6 +103,14 @@ macro_rules! reportable {
                 $crate::Report::new(e)
                     .change_context(Self)
                     .attach_kv(key, value)
+            }
+            #[track_caller]
+            fn report_inner<E, C>(e: E) -> $crate::Report<Self>
+            where
+                C: $crate::Context,
+                E: $crate::ToReport<C>,
+            {
+                e.to_report().change_context(Self)
             }
         }
     };
