@@ -1,5 +1,5 @@
 use std::{fmt, path::Path};
-use tracing::error;
+use tracing::{debug, error, info, trace, warn, Level};
 
 pub use error_stack;
 pub use error_stack::{Context, IntoReport, Report, ResultExt};
@@ -265,6 +265,7 @@ where
         A: fmt::Debug + Send + Sync + 'static;
     // logs error and forwards
     fn and_log_err(self) -> Result<T, E>;
+    fn and_log(self, level: Level) -> Result<T, E>;
     // logs error and forwards with attachment
     fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
     where
@@ -288,6 +289,18 @@ where
         if let Err(e) = self {
             error!(err = ?e, "{attachment:?}");
         }
+    }
+    fn and_log(self, level: Level) -> Result<T, E> {
+        if let Err(err) = &self {
+            match level {
+                Level::TRACE => trace!(?err),
+                Level::DEBUG => debug!(?err),
+                Level::INFO => info!(?err),
+                Level::WARN => warn!(?err),
+                Level::ERROR => error!(?err),
+            }
+        }
+        self
     }
 
     fn and_log_err(self) -> Result<T, E> {
