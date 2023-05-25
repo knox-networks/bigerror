@@ -201,7 +201,7 @@ impl NotFound {
     #[track_caller]
     pub fn with_field(field: &'static str) -> Report<Self>
 where {
-        MissingField::new(field).change_context(Self)
+        Report::new(Self).attach_printable(MissingField::new(field))
     }
 }
 
