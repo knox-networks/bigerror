@@ -137,7 +137,7 @@ pub struct DbError;
 reportable!(DbError);
 
 #[derive(Debug, thiserror::Error)]
-#[error("MissingField")]
+#[error("MissingField: {0}")]
 pub struct MissingField(&'static str);
 
 #[derive(Debug, thiserror::Error)]
