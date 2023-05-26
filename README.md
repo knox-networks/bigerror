@@ -1,5 +1,20 @@
 # bigerror
-`error BIGERROR NOT NULL`
+
+```sql
+-- This error crate is intended to
+-- enhance error-stack:
+-- https://hash.dev/blog/announcing-error-stack
+-- error-stack `is_fantastic == true && does_things.in(|a| functional(approach))` but
+-- `error_stack::Report::change_context` can make code noisy when used often
+--
+-- ...so why not auto implement a bunch of `From<Error> for MyError`?
+-- and provide fundamental building blocks such as `bigerror::NotFound`
+-- to express common causes for errors so that a trace can provide correlation?
+CREATE CRATE IF NOT EXISTS
+  bigerror (
+    error BIGERROR NOT NULL,
+);
+```
 
 
 # example
