@@ -160,6 +160,11 @@ reportable!(InvalidStatus);
 pub struct ConfigError;
 reportable!(ConfigError);
 
+#[derive(Debug, thiserror::Error)]
+#[error("BuildError")]
+pub struct BuildError;
+reportable!(BuildError);
+
 impl InvalidInput {
     #[track_caller]
     pub fn with_path(path: impl AsRef<Path>) -> Report<Self> {
