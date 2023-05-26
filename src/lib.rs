@@ -511,3 +511,38 @@ macro_rules! to_report {
         }
     };
 }
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[derive(Debug, thiserror::Error)]
+    #[error("MyError")]
+    pub struct MyError;
+    reportable!(MyError);
+
+    #[derive(Debug, thiserror::Error)]
+    pub enum Error {
+        #[error("{0:?}")]
+        Report(Report<MyError>),
+    }
+
+    from_report!({
+
+        impl From<std::string::ParseError as ParseError>
+
+        for Error::Report(MyError)
+    });
+
+    to_report!(impl ToReport<MyError> for Error::Report);
+
+    #[test]
+    fn report_as() {
+        fn output() -> Result<usize, Report<MyError>> {
+            "NaN".parse::<usize>().report_as()
+        }
+
+        let _ = output().unwrap_err();
+    }
+}
