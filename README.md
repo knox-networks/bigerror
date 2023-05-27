@@ -9,7 +9,7 @@
 --
 -- ...so why not auto implement a bunch of `From<Error> for MyError`?
 -- and provide fundamental building blocks such as `bigerror::NotFound`
--- to express common causes for errors so that a trace can provide correlation?
+-- to express common causes for errors and imply correlation?
 CREATE CRATE IF NOT EXISTS
   bigerror (
     error BIGERROR NOT NULL,

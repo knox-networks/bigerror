@@ -1,9 +1,20 @@
+use error_stack::fmt::ColorMode;
 use std::{fmt, path::Path};
 use tracing::{debug, error, info, trace, warn, Level};
 
 pub use error_stack;
 pub use error_stack::{Context, IntoReport, Report, ResultExt};
 pub use thiserror;
+
+// TODO we'll have to do a builder pattern here at
+// some point
+pub fn init_colour() {
+    Report::set_color_mode(ColorMode::Color);
+}
+
+pub fn init_emphasis() {
+    Report::set_color_mode(ColorMode::Emphasis);
+}
 
 pub trait Reportable
 where
