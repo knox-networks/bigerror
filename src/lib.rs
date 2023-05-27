@@ -50,11 +50,13 @@ pub trait ReportAs {
     /// Type of the [`Ok`] value in the [`Result`]
     type Ok;
 
+    #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<Self::Ok, Report<C>>;
 }
 
 impl<T, E: Context> ReportAs for Result<T, E> {
     type Ok = T;
+    #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
         self.map_err(C::report)
     }
@@ -187,10 +189,13 @@ impl InvalidInput {
         Report::new(Self).attach_kv("path", path)
     }
 
+    #[track_caller]
     pub fn type_name<T: ?Sized>() -> Report<Self> {
         let type_name = std::any::type_name::<T>();
         Report::new(Self).attach_printable(format!("type: {type_name}"))
     }
+
+    #[track_caller]
     pub fn expected_actual<A>(expected: A, actual: A) -> Report<Self>
     where
         A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
@@ -525,6 +530,34 @@ macro_rules! to_report {
             }
         }
     };
+}
+
+pub trait ToErrReport<T> {
+    /// Type of the [`Ok`] value in the [`Result`]
+    type Ok;
+
+    #[track_caller]
+    fn to_report(self) -> Result<Self::Ok, Report<T>>;
+
+    #[track_caller]
+    fn change_context<C: Context>(self, context: C) -> Result<Self::Ok, Report<C>>
+    where
+        Self: Sized,
+    {
+        self.to_report().change_context(context)
+    }
+}
+
+impl<T, E, C> ToErrReport<C> for Result<T, E>
+where
+    E: ToReport<C>,
+{
+    type Ok = T;
+
+    #[track_caller]
+    fn to_report(self) -> Result<T, Report<C>> {
+        self.map_err(ToReport::to_report)
+    }
 }
 
 #[cfg(test)]
