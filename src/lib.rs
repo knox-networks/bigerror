@@ -16,6 +16,10 @@ pub fn init_emphasis() {
     Report::set_color_mode(ColorMode::Emphasis);
 }
 
+pub fn init_no_ansi() {
+    Report::set_color_mode(ColorMode::None);
+}
+
 pub trait Reportable
 where
     Self: Sized + Context,
