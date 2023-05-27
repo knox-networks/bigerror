@@ -46,7 +46,7 @@ where
         E: ToReport<C>;
 }
 
-pub trait ReportAs: Sized {
+pub trait ReportAs {
     /// Type of the [`Ok`] value in the [`Result`]
     type Ok;
 
