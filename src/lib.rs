@@ -68,7 +68,7 @@ macro_rules! reportable {
     ($context:ident) => {
         impl $crate::Reportable for $context {
             #[track_caller]
-            fn report<C: Context>(ctx: C) -> $crate::Report<Self> {
+            fn report<C: $crate::Context>(ctx: C) -> $crate::Report<Self> {
                 $crate::Report::new(ctx).change_context(Self)
             }
 
@@ -124,7 +124,7 @@ macro_rules! reportable {
                     .attach_kv(key, value)
             }
             #[track_caller]
-            fn report_inner<C>(err: impl ToReport<C>) -> $crate::Report<Self>
+            fn report_inner<C>(err: impl $crate::ToReport<C>) -> $crate::Report<Self>
             where
                 C: $crate::Context,
             {
@@ -197,10 +197,7 @@ impl BoxError {
     }
 
     #[track_caller]
-    pub fn from<E>(err: Box<E>) -> Report<Self>
-    where
-        E: std::error::Error + 'static + Send + Sync,
-    {
+    pub fn from(err: Box<dyn std::error::Error + 'static + Send + Sync>) -> Report<Self> {
         Report::new(Self(err))
     }
 }
