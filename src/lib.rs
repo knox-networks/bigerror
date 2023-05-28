@@ -634,14 +634,17 @@ mod test {
 
         let _ = output().unwrap_err();
     }
-    // #[test]
-    // fn box_reportable() {
-    //     fn output() -> Result<usize, Box<dyn std::error::Error + Sync + Send>> {
-    //         Ok("NaN".parse::<usize>().map_err(|e| Box::new(e))?)
-    //     }
-    //
-    //     let _ = output().map_err(|e| Report::new(e).change_context(ParseError));
-    // }
+    #[test]
+    fn box_reportable() {
+        fn output() -> Result<usize, Box<dyn std::error::Error + Sync + Send>> {
+            Ok("NaN".parse::<usize>().map_err(|e| Box::new(e))?)
+        }
+
+        let _ = output()
+            .map_err(BoxError::from)
+            .change_context(MyError)
+            .unwrap_err();
+    }
 
     #[test]
     fn convresion_error() {
@@ -651,6 +654,6 @@ mod test {
                 .map_err(ConversionError::from::<&str, usize>)
         }
 
-        let _ = output().change_context(MyError);
+        let _ = output().change_context(MyError).unwrap_err();
     }
 }
