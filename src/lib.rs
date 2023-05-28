@@ -188,8 +188,20 @@ pub struct BuildError;
 reportable!(BuildError);
 
 impl BoxError {
-    pub fn new(err: impl std::error::Error + 'static + Send + Sync) -> Report<Self> {
-        Report::new(BoxError(Box::new(err)))
+    #[track_caller]
+    pub fn new<E>(err: E) -> Report<Self>
+    where
+        E: std::error::Error + 'static + Send + Sync,
+    {
+        Report::new(Self(Box::new(err)))
+    }
+
+    #[track_caller]
+    pub fn from<E>(err: Box<E>) -> Report<Self>
+    where
+        E: std::error::Error + 'static + Send + Sync,
+    {
+        Report::new(Self(err))
     }
 }
 
@@ -225,6 +237,7 @@ impl ConversionError {
             .attach_printable(format!("to: {to}"))
     }
 
+    #[track_caller]
     pub fn from<F, T>(ctx: impl Context) -> Report<Self>
     where
         F: ?Sized,
