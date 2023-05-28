@@ -24,7 +24,10 @@ pub trait Reportable
 where
     Self: Sized + Context,
 {
-    fn report<E: Context>(e: E) -> Report<Self>;
+    fn report<C: Context>(ctx: C) -> Report<Self>;
+    // TODO
+    // fn report_dyn_err(err: impl std::error::Error + 'static + Send + Sync)
+    // -> Report<Self>;
     fn attach<A>(value: A) -> Report<Self>
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
@@ -37,13 +40,10 @@ where
     fn with_kv_debug<A>(key: &str, value: A) -> Report<Self>
     where
         A: std::fmt::Debug + Send + Sync + 'static;
-    fn report_with_kv<A, E: Context>(e: E, key: &str, value: A) -> Report<Self>
+    fn report_with_kv<A, C: Context>(ctx: C, key: &str, value: A) -> Report<Self>
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
-    fn report_inner<E, C>(e: E) -> Report<Self>
-    where
-        C: Context,
-        E: ToReport<C>;
+    fn report_inner<C: Context>(err: impl ToReport<C>) -> Report<Self>;
 }
 
 pub trait ReportAs {
@@ -68,12 +68,14 @@ macro_rules! reportable {
     ($context:ident) => {
         impl $crate::Reportable for $context {
             #[track_caller]
-            fn report<E>(e: E) -> $crate::Report<Self>
-            where
-                E: $crate::Context,
-            {
-                $crate::Report::new(e).change_context(Self)
+            fn report<C: Context>(ctx: C) -> $crate::Report<Self> {
+                $crate::Report::new(ctx).change_context(Self)
             }
+
+            // #[track_caller]
+            // fn report_dyn_err(err: impl std::error::Error + 'static + Send + Sync) -> Report<Self> {
+            //     $crate::Report::new($crate::BoxError::new(err)).change_context(Self)
+            // }
 
             #[track_caller]
             fn attach<A>(value: A) -> $crate::Report<Self>
@@ -108,8 +110,8 @@ macro_rules! reportable {
                 $crate::Report::new(Self).attach_kv_debug(key, value)
             }
             #[track_caller]
-            fn report_with_kv<A, E: $crate::Context>(
-                e: E,
+            fn report_with_kv<A, C: $crate::Context>(
+                ctx: C,
                 key: &str,
                 value: A,
             ) -> $crate::Report<Self>
@@ -117,21 +119,24 @@ macro_rules! reportable {
                 A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
             {
                 use $crate::AttachExt;
-                $crate::Report::new(e)
+                $crate::Report::new(ctx)
                     .change_context(Self)
                     .attach_kv(key, value)
             }
             #[track_caller]
-            fn report_inner<E, C>(e: E) -> $crate::Report<Self>
+            fn report_inner<C>(err: impl ToReport<C>) -> $crate::Report<Self>
             where
                 C: $crate::Context,
-                E: $crate::ToReport<C>,
             {
-                e.to_report().change_context(Self)
+                err.to_report().change_context(Self)
             }
         }
     };
 }
+
+#[derive(Debug, thiserror::Error)]
+#[error("{0}")]
+pub struct BoxError(Box<dyn std::error::Error + 'static + Send + Sync>);
 
 #[derive(Debug, thiserror::Error)]
 #[error("NetworkError")]
@@ -182,6 +187,12 @@ reportable!(ConfigError);
 pub struct BuildError;
 reportable!(BuildError);
 
+impl BoxError {
+    pub fn new(err: impl std::error::Error + 'static + Send + Sync) -> Report<Self> {
+        Report::new(BoxError(Box::new(err)))
+    }
+}
+
 impl InvalidInput {
     #[track_caller]
     pub fn with_path(path: impl AsRef<Path>) -> Report<Self> {
@@ -210,6 +221,18 @@ impl ConversionError {
         let from = std::any::type_name::<F>();
         let to = std::any::type_name::<T>();
         Report::new(Self)
+            .attach_printable(format!("from: {from}"))
+            .attach_printable(format!("to: {to}"))
+    }
+
+    pub fn from<F, T>(ctx: impl Context) -> Report<Self>
+    where
+        F: ?Sized,
+        T: ?Sized,
+    {
+        let from = std::any::type_name::<F>();
+        let to = std::any::type_name::<T>();
+        Self::report(ctx)
             .attach_printable(format!("from: {from}"))
             .attach_printable(format!("to: {to}"))
     }
@@ -592,5 +615,32 @@ mod test {
         }
 
         let _ = output().unwrap_err();
+    }
+    #[test]
+    fn reportable() {
+        fn output() -> Result<usize, Report<MyError>> {
+            "NaN".parse::<usize>().map_err(MyError::report)
+        }
+
+        let _ = output().unwrap_err();
+    }
+    // #[test]
+    // fn box_reportable() {
+    //     fn output() -> Result<usize, Box<dyn std::error::Error + Sync + Send>> {
+    //         Ok("NaN".parse::<usize>().map_err(|e| Box::new(e))?)
+    //     }
+    //
+    //     let _ = output().map_err(|e| Report::new(e).change_context(ParseError));
+    // }
+
+    #[test]
+    fn convresion_error() {
+        fn output() -> Result<usize, Report<ConversionError>> {
+            "NaN"
+                .parse::<usize>()
+                .map_err(ConversionError::from::<&str, usize>)
+        }
+
+        let _ = output().change_context(MyError);
     }
 }
