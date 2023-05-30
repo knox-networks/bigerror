@@ -4,7 +4,7 @@
 -- This error crate is intended to
 -- enhance error-stack:
 -- https://hash.dev/blog/announcing-error-stack
--- error-stack `is_fantastic && does_things.in(|a| functional(approach))` but
+-- error-stack `is_fantastic && does_things.in(|_a| functional(approach))` but
 -- `error_stack::Report::change_context` can make code noisy when used often
 --
 -- ...so why not auto implement a bunch of `From<Error> for MyError`?
