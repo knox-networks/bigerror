@@ -21,8 +21,8 @@ CREATE CRATE IF NOT EXISTS
 
 ```rust
 use bigerror::{
-    from_report, reportable, to_report, BoxError, ConversionError, DbError,
-    NetworkError, NotFound, ParseError, Report, ReportAs, Reportable, ResultExt,
+    from_report, reportable, to_report, BoxError, ConversionError, DbError, NetworkError, NotFound,
+    ParseError, Report, ReportAs, Reportable, ResultExt,
 };
 use uuid::Uuid;
 
@@ -76,10 +76,12 @@ fn box_error() -> Result<usize, Report<BoxError>> {
 }
 
 fn main() -> Result<(), Report<MyError>> {
-    let _conversion = conversion_error().change_context(MyError)?;
-    let _box_error = box_error().change_context(MyError)?;
-    let other_err = OtherError::Report(NotFound::with_kv("id", Uuid::new_v4()));
-    Err(MyError::report_inner(other_err))?;
+    let conversion = conversion_error().change_context(MyError)?;
+
+    let box_error = box_error().change_context(MyError)?;
+
+    let other_err = Err(OtherError::Report(NotFound::with_kv("id", Uuid::new_v4())));
+    other_err.map_err(MyError::report_inner)?;
 
     "NaN".parse::<usize>().report_as()?;
 
