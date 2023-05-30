@@ -652,9 +652,27 @@ mod test {
             "NaN"
                 .parse::<usize>()
                 .map_err(ConversionError::from::<&str, usize>)
-                .attach(ParseError)
+                .attach_printable(ParseError)
         }
 
         let _ = output().change_context(MyError).unwrap_err();
+    }
+
+    #[test]
+    fn error_in_error_handling() {
+        fn output() -> Result<usize, Report<ConversionError>> {
+            "NaN"
+                .parse::<usize>()
+                .map_err(ConversionError::from::<&str, usize>)
+                .map_err(|e| match "More NaN".parse::<u32>() {
+                    Ok(attachment) => e.attach_printable(attachment),
+                    Err(attachment_err) => e
+                        .attach_printable(ParseError)
+                        .attach_kv("val: \"More Nan\"", attachment_err),
+                })
+        }
+        init_colour();
+
+        let _ = output().change_context(MyError).unwrap();
     }
 }
