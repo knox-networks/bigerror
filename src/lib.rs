@@ -671,8 +671,7 @@ mod test {
                         .attach_kv("val: \"More Nan\"", attachment_err),
                 })
         }
-        init_colour();
 
-        let _ = output().change_context(MyError).unwrap();
+        let _ = output().change_context(MyError).unwrap_err();
     }
 }
