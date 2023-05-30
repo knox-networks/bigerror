@@ -21,53 +21,68 @@ CREATE CRATE IF NOT EXISTS
 
 ```rust
 use bigerror::{
-    to_report, from_report,
-    DbErrork, NetworkError,
-    NotFound, ParseError, TransactionError,
-    InvalidInput, Report
+    from_report, reportable, to_report, BoxError, ConversionError, DbError,
+    NetworkError, NotFound, ParseError, Report, ReportAs, Reportable, ResultExt,
 };
-
+use uuid::Uuid;
 
 #[derive(Debug, thiserror::Error)]
-#[error("CliError")]
-pub struct CliError;
+#[error("MyError")]
+pub struct MyError;
+
+reportable!(MyError);
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("{0:?}")]
-    Report(Report<CliError>),
-
+    Report(Report<MyError>),
+    /// we want to preserve this for match arm purposes
     #[error(transparent)]
     TonicStatus(#[from] tonic::Status),
 }
 
 from_report!({
-    impl From<other_mod::Error as ToReport<_>>
-
-    impl From<DbError>
-    impl From<NetworkError>
-    impl From<NotFound>
-    impl From<ParseError>
-    impl From<TransactionError>
-
-    impl From<Report<InvalidInput>>
-    impl From<Report<NetworkError>>
-    impl From<Report<NotFound>>
-    impl From<Report<ParseError>>
-    impl From<Report<TransactionError>>
+    impl From<OtherError as ToReport<_>>
 
     impl From<std::io::Error>
-
     impl From<tonic::transport::Error as NetworkError>
-
     impl From<std::num::ParseIntError as ParseError>
-    impl From<rust_decimal::Error as ParseError>
-    impl From<hex::FromHexError as ParseError>
-    impl From<std::num::TryFromIntError as ParseError>
-    impl From<uuid::Error as ParseError>
+    impl From<sqlx::Error as DbError>
 
-    for Error::Report(CliError)
+    for Error::Report(MyError)
 });
 
-to_report!(impl ToReport<CliError> for Error::Report);
+#[derive(Debug, thiserror::Error)]
+pub enum OtherError {
+    #[error("{0:?}")]
+    Report(Report<NotFound>),
+}
+
+to_report!(impl ToReport<NotFound> for OtherError::Report);
+
+fn conversion_error() -> Result<usize, Report<ConversionError>> {
+    "NaN"
+        .parse::<usize>()
+        .map_err(ConversionError::from::<&str, usize>)
+        .attach(ParseError)
+}
+
+fn box_error() -> Result<usize, Report<BoxError>> {
+    fn inner() -> Result<usize, Box<dyn std::error::Error + Sync + Send>> {
+        Ok("NaN".parse::<usize>().map_err(Box::new)?)
+    }
+
+    inner().map_err(BoxError::from)
+}
+
+fn main() -> Result<(), Report<MyError>> {
+    let _conversion = conversion_error().change_context(MyError)?;
+    let _box_error = box_error().change_context(MyError)?;
+    let other_err = OtherError::Report(NotFound::with_kv("id", Uuid::new_v4()));
+    Err(MyError::report_inner(other_err))?;
+
+    "NaN".parse::<usize>().report_as()?;
+
+    Ok(())
+}
 ```

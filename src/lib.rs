@@ -652,6 +652,7 @@ mod test {
             "NaN"
                 .parse::<usize>()
                 .map_err(ConversionError::from::<&str, usize>)
+                .attach(ParseError)
         }
 
         let _ = output().change_context(MyError).unwrap_err();
