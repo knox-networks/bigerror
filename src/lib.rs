@@ -2,8 +2,7 @@ use error_stack::fmt::ColorMode;
 use std::{fmt, path::Path};
 use tracing::{debug, error, info, trace, warn, Level};
 
-pub use error_stack;
-pub use error_stack::{Context, IntoReport, Report, ResultExt};
+pub use error_stack::{self, Context, IntoReport, Report, ResultExt};
 pub use thiserror;
 
 // TODO we'll have to do a builder pattern here at
@@ -154,6 +153,11 @@ pub struct NotFound;
 reportable!(NotFound);
 
 #[derive(Debug, thiserror::Error)]
+#[error("AlreadyPresent")]
+pub struct AlreadyPresent;
+reportable!(AlreadyPresent);
+
+#[derive(Debug, thiserror::Error)]
 #[error("DbError")]
 pub struct DbError;
 reportable!(DbError);
@@ -221,6 +225,14 @@ impl InvalidInput {
         A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
     {
         Self::with_kv("expected", expected).attach_kv("actual", actual)
+    }
+
+    #[track_caller]
+    pub fn already_present<A>(field: &'static str, value: A) -> Report<Self>
+    where
+        A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+    {
+        AlreadyPresent::with_kv(field, value).change_context(Self)
     }
 }
 
