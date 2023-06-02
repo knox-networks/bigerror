@@ -92,6 +92,7 @@ pull_request_rules:
   # - Mergify leverages Python regular expressions to match rules.
   #
   # Semantic commit messages
+  # - feat:      new feature for the user, not a new feature for build script
   # - chore:     updating grunt tasks etc; no production code change
   # - docs:      changes to the documentation
   # - fix:       bug fix for the user, not a fix to a build script
@@ -100,6 +101,13 @@ pull_request_rules:
   # - spike:     research spike
   # - style:     formatting, missing semi colons, etc; no production code change
   # ===============================================================================
+
+  - name: feature label
+    conditions:
+      - "head~=(?i)^feat(ure)?"
+    actions:
+      label:
+        add: ["feature"]
 
   - name: fix label
     conditions:
