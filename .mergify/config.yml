@@ -1,0 +1,159 @@
+queue_rules:
+  - name: default
+    conditions:
+      - base~=main
+
+pull_request_rules:
+  - name: automerge if approved and tests pass
+    # https://docs.mergify.com/conditions/#conditions
+    conditions:
+      - "#approved-reviews-by>=1"
+      - -closed # filter-out closed GH PRs
+      - -conflict # skip PRs with conflicts
+      - -draft # filter-out GH draft PRs
+      - -label=nomerge # prevents automerge
+      - base~=main
+      - label=automerge
+    actions:
+      queue:
+        name: default
+        method: squash
+        # https://docs.mergify.com/configuration/#template
+        commit_message_template: |
+          {{ title }} (#{{ number }})
+
+          Approved by: @{{ approved_reviews_by | join(', @') }}
+          ============
+          {{ body }}
+          ============
+          {% set authors = [] %}
+          {%- for commit in commits if (commit.author,commit.email_author) not in authors
+          and not commit.author.startswith('mergify') %}
+          {{- authors.append((commit.author, commit.email_author)) or "" -}}
+          {% endfor %}
+          {%- for (author, email) in authors if authors|length > 1 -%}
+          Co-Authored-By: {{ author }} <{{ email }}>
+          {% endfor %}
+
+  - name: cleanup post-merge
+    conditions:
+      - merged
+    actions:
+      label:
+        remove:
+          - automerge
+          - nomerge
+          - BLOCKED
+      # The delete_head_branch action deletes the head branch of the pull request,
+      # that is the branch which hosts the commits.
+      # This only works if the branch is stored in the same repository that the
+      # pull request target, i.e., if the pull request comes from the same repository and not from a fork.
+      delete_head_branch:
+       # the branch will not be deleted if another pull request depends on the head branch.
+        force: false
+  - name: notify on merge
+    conditions:
+      - merged
+      - label=automerge
+    actions:
+      comment:
+        message: "[✅] @{{author}}: **{{title}}** has been merged successfully."
+
+  - name: alert on merge conflict
+    conditions:
+      - conflict
+      - label=automerge
+    actions:
+      comment:
+        message: "[\U0001F198] @{{author}}: `{{head}}` has conflicts with `{{base}}` that must be resolved."
+
+  - name: alert on tests failure for automerge
+    conditions:
+      - label=automerge
+      - status-failure=commit
+    actions:
+      comment:
+        message: "[\U0001F198] @{{author}}: unable to merge due to CI failure."
+
+  - name: auto-assign author
+    conditions:
+      - "#assignee=0"
+    actions:
+      assign:
+        users: ["{{author}}"]
+
+  # ===============================================================================
+  # LABELS
+  # ===============================================================================
+  # Automatically add labels when PRs match certain patterns
+  #
+  # NOTE:
+  # - single quotes for regex to avoid accidental escapes
+  # - Mergify leverages Python regular expressions to match rules.
+  #
+  # Semantic commit messages
+  # - chore:     updating grunt tasks etc; no production code change
+  # - docs:      changes to the documentation
+  # - fix:       bug fix for the user, not a fix to a build script
+  # - release:   increment minor/major version of our release
+  # - rename:    changes to naming conventions
+  # - spike:     research spike
+  # - style:     formatting, missing semi colons, etc; no production code change
+  # ===============================================================================
+
+  - name: fix label
+    conditions:
+      - "head~=(?i)^(bug|hot)?fix"
+    actions:
+      label:
+        add: ["fix"]
+
+  - name: chore label
+    conditions:
+      - "head~=(?i)^chore"
+    actions:
+      label:
+        add: ["chore"]
+
+  - name: docs label
+    conditions:
+      - "head~=(?i)^doc"
+    actions:
+      label:
+        add: ["documentation"]
+
+  - name: release
+    conditions:
+      - "head~=(?i)^rel(ease)?"
+    actions:
+      label:
+        add: ["release"]
+
+  - name: spike
+    conditions:
+      - "head~=(?i)^spike"
+    actions:
+      label:
+        add: ["spike"]
+
+  - name: rename
+    conditions:
+      - "head~=(?i)^rename"
+    actions:
+      label:
+        add: ["rename"]
+
+  - name: style
+    conditions:
+      - "head~=(?i)^style"
+    actions:
+      label:
+        add: ["style"]
+
+# Refs:
+#
+# https://docs.mergify.io/getting-started/
+# https://docs.mergify.io/configuration/?highlight=regular%20expressions#regular-expressions
+# https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716
+
+
