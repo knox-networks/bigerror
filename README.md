@@ -1,4 +1,4 @@
-# bigerror
+# bigerror 🍆
 
 ```sql
 -- This error crate is intended to
@@ -30,6 +30,7 @@ use uuid::Uuid;
 #[error("MyError")]
 pub struct MyError;
 
+// https://docs.rs/bigerror/latest/bigerror/trait.Reportable.html
 reportable!(MyError);
 
 #[derive(Debug, thiserror::Error)]
