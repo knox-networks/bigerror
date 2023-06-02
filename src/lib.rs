@@ -466,6 +466,35 @@ where
     }
 }
 
+/// Used to produce [`NotFound`] reports from an [`Option`]
+pub trait OptionReport {
+    type Some;
+    fn ok_or_not_found(self) -> Result<Self::Some, Report<NotFound>>;
+    fn ok_or_not_found_kv<A>(self, key: &str, value: A) -> Result<Self::Some, Report<NotFound>>
+    where
+        A: fmt::Display + fmt::Debug + Send + Sync + 'static;
+    fn ok_or_not_found_field(self, field: &'static str) -> Result<Self::Some, Report<NotFound>>;
+}
+
+impl<T> OptionReport for Option<T> {
+    type Some = T;
+
+    fn ok_or_not_found(self) -> Result<T, Report<NotFound>> {
+        self.ok_or_else(|| Report::new(NotFound))
+    }
+
+    fn ok_or_not_found_kv<A>(self, key: &str, value: A) -> Result<T, Report<NotFound>>
+    where
+        A: fmt::Display + fmt::Debug + Send + Sync + 'static,
+    {
+        self.ok_or_else(|| NotFound::with_kv(key, value))
+    }
+
+    fn ok_or_not_found_field(self, field: &'static str) -> Result<T, Report<NotFound>> {
+        self.ok_or_else(|| NotFound::with_field(field))
+    }
+}
+
 #[cfg(test)]
 mod test {
 
@@ -546,5 +575,28 @@ mod test {
         }
 
         let _ = output().change_context(MyError).unwrap_err();
+    }
+    #[test]
+    fn option_report() {
+        assert!(None::<()>.ok_or_not_found().is_err());
+
+        let id: u32 = 0xdeadbeef;
+        assert!(None::<bool>.ok_or_not_found_kv("id", id).is_err());
+        assert_eq!(true, Some(true).ok_or_not_found_kv("id", id).unwrap());
+
+        struct OptionField<'a> {
+            name: Option<&'a str>,
+        }
+
+        let field_none = OptionField { name: None };
+        assert!(field_none.name.ok_or_not_found_field("name").is_err());
+
+        let field_some = OptionField {
+            name: Some("biggy"),
+        };
+        assert_eq!(
+            "biggy",
+            field_some.name.ok_or_not_found_field("name").unwrap()
+        );
     }
 }
