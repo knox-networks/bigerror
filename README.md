@@ -1,4 +1,4 @@
-# bigerror 🍆
+# bigerror 🍅🍆🥒 
 
 ```sql
 -- This error crate is intended to
