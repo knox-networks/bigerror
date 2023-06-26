@@ -1,4 +1,7 @@
-use crate::{AttachExt, Reportable};
+use crate::{
+    attachment::{AlreadyPresent, MissingField},
+    AttachExt, Reportable,
+};
 
 use std::path::Path;
 use tracing::error;
@@ -28,18 +31,9 @@ pub struct NotFound;
 reportable!(NotFound);
 
 #[derive(Debug, thiserror::Error)]
-#[error("AlreadyPresent")]
-pub struct AlreadyPresent;
-reportable!(AlreadyPresent);
-
-#[derive(Debug, thiserror::Error)]
 #[error("DbError")]
 pub struct DbError;
 reportable!(DbError);
-
-#[derive(Debug, thiserror::Error)]
-#[error("MissingField: {0}")]
-pub struct MissingField(&'static str);
 
 #[derive(Debug, thiserror::Error)]
 #[error("ConversionError")]
@@ -132,13 +126,6 @@ impl ConversionError {
         Self::report(ctx)
             .attach_printable(format!("from: {from}"))
             .attach_printable(format!("to: {to}"))
-    }
-}
-
-impl MissingField {
-    #[track_caller]
-    pub fn new(field: &'static str) -> Report<Self> {
-        Report::new(Self(field))
     }
 }
 

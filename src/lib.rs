@@ -5,8 +5,10 @@ use tracing::{debug, error, info, trace, warn, Level};
 pub use error_stack::{self, Context, IntoReport, Report, ResultExt};
 pub use thiserror;
 
-mod kind;
-pub use kind::*;
+pub mod attachment;
+pub mod context;
+
+pub use context::*;
 
 // TODO we'll have to do a builder pattern here at
 // some point
@@ -614,7 +616,7 @@ mod test {
 
         let id: u32 = 0xdeadbeef;
         assert!(None::<bool>.ok_or_not_found_kv("id", id).is_err());
-        assert_eq!(true, Some(true).ok_or_not_found_kv("id", id).unwrap());
+        assert!(Some(true).ok_or_not_found_kv("id", id).unwrap());
 
         struct OptionField<'a> {
             name: Option<&'a str>,
