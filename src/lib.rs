@@ -652,6 +652,6 @@ mod test {
                 .into_ctx()
         }
 
-        let _ = output().unwrap_err();
+        assert!(output().is_err())
     }
 }
