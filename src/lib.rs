@@ -22,6 +22,8 @@ pub fn init_no_ansi() {
     Report::set_color_mode(ColorMode::None);
 }
 
+/// `Reportable` behaves as an `error_stack::ContextExt`
+/// ideally used for zero sized errors or ones that hold a `'static` ref/value
 pub trait Reportable
 where
     Self: Sized + Context,
@@ -46,13 +48,14 @@ where
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
     fn report_inner<C: Context>(err: impl ToReport<C>) -> Report<Self>;
+    fn value() -> Self;
 }
 
+/// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
 pub trait ReportAs {
     /// Type of the [`Ok`] value in the [`Result`]
     type Ok;
 
-    #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<Self::Ok, Report<C>>;
 }
 
@@ -60,7 +63,33 @@ impl<T, E: Context> ReportAs for Result<T, E> {
     type Ok = T;
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
-        self.map_err(C::report)
+        self.into_report().change_context(C::value())
+    }
+}
+
+pub trait IntoContext {
+    fn into_ctx<C: Reportable>(self) -> Report<C>;
+}
+
+impl<T: Context> IntoContext for Report<T> {
+    #[track_caller]
+    fn into_ctx<C: Reportable>(self) -> Report<C> {
+        self.change_context(C::value())
+    }
+}
+
+pub trait ResultIntoContext {
+    /// Type of the [`Ok`] value in the [`Result`]
+    type Ok;
+
+    fn into_ctx<C: Reportable>(self) -> Result<Self::Ok, Report<C>>;
+}
+
+impl<T, E: Context> ResultIntoContext for Result<T, Report<E>> {
+    type Ok = T;
+    #[track_caller]
+    fn into_ctx<C: Reportable>(self) -> Result<T, Report<C>> {
+        self.change_context(C::value())
     }
 }
 
@@ -132,12 +161,14 @@ macro_rules! reportable {
             {
                 err.to_report().change_context(Self)
             }
+            fn value() -> Self {
+                $context
+            }
         }
     };
 }
 
 pub trait AttachExt {
-    #[track_caller]
     fn attach_kv<A>(self, key: &str, value: A) -> Self
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
@@ -427,6 +458,7 @@ macro_rules! from_report {
 macro_rules! to_report {
     (impl ToReport<$reportable:path> for $for:ident::$variant:ident) => {
         impl $crate::ToReport<$reportable> for $for {
+            #[track_caller]
             fn to_report(self) -> $crate::Report<$reportable> {
                 #[allow(unreachable_patterns)]
                 match self {
@@ -438,7 +470,7 @@ macro_rules! to_report {
     };
 }
 
-pub trait ToErrReport<T> {
+pub trait ResultToReport<T> {
     /// Type of the [`Ok`] value in the [`Result`]
     type Ok;
 
@@ -454,7 +486,7 @@ pub trait ToErrReport<T> {
     }
 }
 
-impl<T, E, C> ToErrReport<C> for Result<T, E>
+impl<T, E, C> ResultToReport<C> for Result<T, E>
 where
     E: ToReport<C>,
 {
@@ -598,5 +630,28 @@ mod test {
             "biggy",
             field_some.name.ok_or_not_found_field("name").unwrap()
         );
+    }
+
+    #[test]
+    fn into_ctx() {
+        fn output() -> Result<usize, Report<MyError>> {
+            "NaN"
+                .parse::<usize>()
+                .map_err(|e| ConversionError::from::<&str, usize>(e).into_ctx())
+        }
+
+        let _ = output().unwrap_err();
+    }
+
+    #[test]
+    fn result_into_ctx() {
+        fn output() -> Result<usize, Report<MyError>> {
+            "NaN"
+                .parse::<usize>()
+                .map_err(ConversionError::from::<&str, usize>)
+                .into_ctx()
+        }
+
+        let _ = output().unwrap_err();
     }
 }
