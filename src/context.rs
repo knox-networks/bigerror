@@ -130,6 +130,7 @@ impl ConversionError {
 }
 
 impl NotFound {
+    #[inline]
     #[track_caller]
     pub fn with_field(field: &'static str) -> Report<Self>
 where {

@@ -74,6 +74,7 @@ pub trait IntoContext {
 }
 
 impl<T: Context> IntoContext for Report<T> {
+    #[inline]
     #[track_caller]
     fn into_ctx<C: Reportable>(self) -> Report<C> {
         self.change_context(C::value())
@@ -89,6 +90,7 @@ pub trait ResultIntoContext {
 
 impl<T, E: Context> ResultIntoContext for Result<T, Report<E>> {
     type Ok = T;
+    #[inline]
     #[track_caller]
     fn into_ctx<C: Reportable>(self) -> Result<T, Report<C>> {
         self.change_context(C::value())
@@ -494,6 +496,7 @@ where
 {
     type Ok = T;
 
+    #[inline]
     #[track_caller]
     fn to_report(self) -> Result<T, Report<C>> {
         self.map_err(ToReport::to_report)
@@ -513,19 +516,34 @@ pub trait OptionReport {
 impl<T> OptionReport for Option<T> {
     type Some = T;
 
+    #[track_caller]
     fn ok_or_not_found(self) -> Result<T, Report<NotFound>> {
-        self.ok_or_else(|| Report::new(NotFound))
+        // TODO #[track_caller] on closure
+        // https://github.com/rust-lang/rust/issues/87417
+        // self.ok_or_else(|| Report::new(NotFound))
+        match self {
+            Some(v) => Ok(v),
+            None => Err(Report::new(NotFound)),
+        }
     }
 
+    #[track_caller]
     fn ok_or_not_found_kv<A>(self, key: &str, value: A) -> Result<T, Report<NotFound>>
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static,
     {
-        self.ok_or_else(|| NotFound::with_kv(key, value))
+        match self {
+            Some(v) => Ok(v),
+            None => Err(NotFound::with_kv(key, value)),
+        }
     }
 
+    #[track_caller]
     fn ok_or_not_found_field(self, field: &'static str) -> Result<T, Report<NotFound>> {
-        self.ok_or_else(|| NotFound::with_field(field))
+        match self {
+            Some(v) => Ok(v),
+            None => Err(NotFound::with_field(field)),
+        }
     }
 }
 
