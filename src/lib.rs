@@ -480,14 +480,6 @@ pub trait ResultToReport<T> {
 
     #[track_caller]
     fn to_report(self) -> Result<Self::Ok, Report<T>>;
-
-    #[track_caller]
-    fn change_context<C: Context>(self, context: C) -> Result<Self::Ok, Report<C>>
-    where
-        Self: Sized,
-    {
-        self.to_report().change_context(context)
-    }
 }
 
 impl<T, E, C> ResultToReport<C> for Result<T, E>
@@ -500,6 +492,12 @@ where
     #[track_caller]
     fn to_report(self) -> Result<T, Report<C>> {
         self.map_err(ToReport::to_report)
+    }
+}
+
+impl<C> ToReport<C> for Report<C> {
+    fn to_report(self) -> Report<C> {
+        self
     }
 }
 
