@@ -1,5 +1,5 @@
 use crate::{
-    attachment::{AlreadyPresent, MissingField},
+    attachment::{AlreadyPresent, MissingField, Unsupported},
     AttachExt, Reportable,
 };
 
@@ -96,6 +96,10 @@ impl InvalidInput {
         Self::with_kv("expected", expected).attach_kv("actual", actual)
     }
 
+    pub fn unsupported() -> Report<Self> {
+        Report::new(Self).attach_printable(Unsupported)
+    }
+
     #[track_caller]
     pub fn already_present<A>(field: &'static str, value: A) -> Report<Self>
     where
@@ -137,3 +141,4 @@ where {
         Report::new(Self).attach_printable(MissingField::new(field))
     }
 }
+

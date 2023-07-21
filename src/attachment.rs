@@ -20,3 +20,7 @@ impl MissingField {
         Report::new(Self(field))
     }
 }
+
+#[derive(Debug, thiserror::Error)]
+#[error("Unsupported")]
+pub struct Unsupported;
