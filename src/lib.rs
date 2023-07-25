@@ -8,6 +8,7 @@ pub use thiserror;
 pub mod attachment;
 pub mod context;
 
+pub use attachment::Field;
 pub use context::*;
 
 // TODO we'll have to do a builder pattern here at
@@ -50,6 +51,10 @@ where
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
     fn report_inner<C: Context>(err: impl ToReport<C>) -> Report<Self>;
+    fn with_field_status<S>(name: &'static str, status: S) -> Report<Self>
+    where
+        S: fmt::Display + fmt::Debug + Send + Sync + 'static;
+
     fn value() -> Self;
 }
 
@@ -165,6 +170,15 @@ macro_rules! reportable {
             {
                 err.to_report().change_context(Self)
             }
+
+            #[track_caller]
+            fn with_field_status<S>(name: &'static str, status: S) -> $crate::Report<Self>
+            where
+                S: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+            {
+                $crate::Report::new(Self)
+                    .attach_printable($crate::attachment::Field::new(name, status))
+            }
             fn value() -> Self {
                 $context
             }
@@ -179,6 +193,10 @@ pub trait AttachExt {
     fn attach_kv_debug<A>(self, key: &str, value: A) -> Self
     where
         A: fmt::Debug + Send + Sync + 'static;
+
+    fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
+    where
+        S: fmt::Display + fmt::Debug + Send + Sync + 'static;
 }
 
 impl<C> AttachExt for error_stack::Report<C> {
@@ -197,6 +215,12 @@ impl<C> AttachExt for error_stack::Report<C> {
     {
         self.attach_printable(format!("{key}: {value:?}"))
     }
+    fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
+    where
+        S: fmt::Display + fmt::Debug + Send + Sync + 'static,
+    {
+        self.attach_printable(Field::new(name, status))
+    }
 }
 
 impl<T, C> AttachExt for Result<T, Report<C>> {
@@ -214,6 +238,13 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
         A: fmt::Debug + Send + Sync + 'static,
     {
         self.attach_printable(format!("{key}: {value:?}"))
+    }
+
+    fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
+    where
+        S: fmt::Display + fmt::Debug + Send + Sync + 'static,
+    {
+        self.attach_printable(Field::new(name, status))
     }
 }
 
