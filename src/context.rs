@@ -1,5 +1,5 @@
 use crate::{
-    attachment::{AlreadyPresent, MissingField, Unsupported},
+    attachment::{self, Field, Unsupported},
     AttachExt, Reportable,
 };
 
@@ -96,16 +96,9 @@ impl InvalidInput {
         Self::with_kv("expected", expected).attach_kv("actual", actual)
     }
 
+    #[track_caller]
     pub fn unsupported() -> Report<Self> {
         Report::new(Self).attach_printable(Unsupported)
-    }
-
-    #[track_caller]
-    pub fn already_present<A>(field: &'static str, value: A) -> Report<Self>
-    where
-        A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
-    {
-        AlreadyPresent::with_kv(field, value).change_context(Self)
     }
 }
 
@@ -134,11 +127,17 @@ impl ConversionError {
 }
 
 impl NotFound {
-    #[inline]
     #[track_caller]
     pub fn with_field(field: &'static str) -> Report<Self>
 where {
-        Report::new(Self).attach_printable(MissingField::new(field))
+        Report::new(Self).attach_printable(Field::new(field, attachment::Missing))
     }
 }
 
+impl ParseError {
+    #[track_caller]
+    pub fn with_field(field: &'static str) -> Report<Self>
+where {
+        Report::new(Self).attach_printable(Field::new(field, attachment::Invalid))
+    }
+}
