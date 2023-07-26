@@ -59,18 +59,28 @@ where
 }
 
 /// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
-pub trait ReportAs {
-    /// Type of the [`Ok`] value in the [`Result`]
-    type Ok;
-
-    fn report_as<C: Reportable>(self) -> Result<Self::Ok, Report<C>>;
+pub trait ReportAs<T> {
+    fn report_as<C: Reportable>(self) -> Result<T, Report<C>>;
 }
 
-impl<T, E: Context> ReportAs for Result<T, E> {
-    type Ok = T;
+impl<T, E: Context> ReportAs<T> for Result<T, E> {
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
         self.into_report().change_context(C::value())
+    }
+}
+
+impl<T> ReportAs<T> for &'static str {
+    #[track_caller]
+    fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
+        Err(Report::new(C::value()).attach_printable(self))
+    }
+}
+
+impl<T> ReportAs<T> for String {
+    #[track_caller]
+    fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
+        Err(Report::new(C::value()).attach_printable(self))
     }
 }
 
