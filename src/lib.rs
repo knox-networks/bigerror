@@ -9,6 +9,8 @@ pub mod attachment;
 pub mod context;
 
 pub use attachment::Field;
+
+use attachment::{Debug, Display};
 pub use context::*;
 
 // TODO we'll have to do a builder pattern here at
@@ -37,19 +39,22 @@ where
     // -> Report<Self>;
     fn attach<A>(value: A) -> Report<Self>
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static;
+        A: Display;
     fn attach_debug<A>(value: A) -> Report<Self>
     where
-        A: fmt::Debug + Send + Sync + 'static;
-    fn with_kv<A>(key: &str, value: A) -> Report<Self>
+        A: Debug;
+    fn with_kv<K, V>(key: K, value: V) -> Report<Self>
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static;
-    fn with_kv_debug<A>(key: &str, value: A) -> Report<Self>
+        K: Display,
+        V: Display;
+    fn with_kv_debug<K, V>(key: K, value: V) -> Report<Self>
     where
-        A: std::fmt::Debug + Send + Sync + 'static;
-    fn report_with_kv<A, C: Context>(ctx: C, key: &str, value: A) -> Report<Self>
+        K: Debug,
+        V: Debug;
+    fn report_with_kv<K, V, C: Context>(ctx: C, key: K, value: V) -> Report<Self>
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static;
+        K: Display,
+        V: Display;
     fn report_inner<C: Context>(err: impl ToReport<C>) -> Report<Self>;
     fn with_field_status<S>(name: &'static str, status: S) -> Report<Self>
     where
@@ -130,7 +135,7 @@ macro_rules! reportable {
             #[track_caller]
             fn attach<A>(value: A) -> $crate::Report<Self>
             where
-                A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+                A: $crate::attachment::Display,
             {
                 $crate::Report::new(Self).attach_printable(value)
             }
@@ -138,35 +143,38 @@ macro_rules! reportable {
             #[track_caller]
             fn attach_debug<A>(value: A) -> $crate::Report<Self>
             where
-                A: std::fmt::Debug + Send + Sync + 'static,
+                A: $crate::attachment::Debug,
             {
                 $crate::Report::new(Self).attach_printable(format!("{value:?}"))
             }
 
             #[track_caller]
-            fn with_kv<A>(key: &str, value: A) -> $crate::Report<Self>
+            fn with_kv<K, V>(key: K, value: V) -> $crate::Report<Self>
             where
-                A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+                K: $crate::attachment::Display,
+                V: $crate::attachment::Display,
             {
                 use $crate::AttachExt;
                 $crate::Report::new(Self).attach_kv(key, value)
             }
             #[track_caller]
-            fn with_kv_debug<A>(key: &str, value: A) -> $crate::Report<Self>
+            fn with_kv_debug<K, V>(key: K, value: V) -> $crate::Report<Self>
             where
-                A: std::fmt::Debug + Send + Sync + 'static,
+                K: $crate::attachment::Debug,
+                V: $crate::attachment::Debug,
             {
                 use $crate::AttachExt;
                 $crate::Report::new(Self).attach_kv_debug(key, value)
             }
             #[track_caller]
-            fn report_with_kv<A, C: $crate::Context>(
+            fn report_with_kv<K, V, C: $crate::Context>(
                 ctx: C,
-                key: &str,
-                value: A,
+                key: K,
+                value: V,
             ) -> $crate::Report<Self>
             where
-                A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+                K: $crate::attachment::Display,
+                V: $crate::attachment::Display,
             {
                 use $crate::AttachExt;
                 $crate::Report::new(ctx)
@@ -197,37 +205,41 @@ macro_rules! reportable {
 }
 
 pub trait AttachExt {
-    fn attach_kv<A>(self, key: &str, value: A) -> Self
+    fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static;
-    fn attach_kv_debug<A>(self, key: &str, value: A) -> Self
+        K: Display,
+        V: Display;
+    fn attach_kv_debug<K, V>(self, key: K, value: V) -> Self
     where
-        A: fmt::Debug + Send + Sync + 'static;
+        K: Debug,
+        V: Debug;
 
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
-        S: fmt::Display + fmt::Debug + Send + Sync + 'static;
+        S: Display;
 }
 
 impl<C> AttachExt for error_stack::Report<C> {
     #[track_caller]
-    fn attach_kv<A>(self, key: &str, value: A) -> Self
+    fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static,
+        K: Display,
+        V: Display,
     {
         self.attach_printable(format!("{key}: {value}"))
     }
 
     #[track_caller]
-    fn attach_kv_debug<A>(self, key: &str, value: A) -> Self
+    fn attach_kv_debug<K, V>(self, key: K, value: V) -> Self
     where
-        A: fmt::Debug + Send + Sync + 'static,
+        K: Debug,
+        V: Debug,
     {
-        self.attach_printable(format!("{key}: {value:?}"))
+        self.attach_printable(format!("{key:?}: {value:?}"))
     }
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
-        S: fmt::Display + fmt::Debug + Send + Sync + 'static,
+        S: Display,
     {
         self.attach_printable(Field::new(name, status))
     }
@@ -235,24 +247,26 @@ impl<C> AttachExt for error_stack::Report<C> {
 
 impl<T, C> AttachExt for Result<T, Report<C>> {
     #[track_caller]
-    fn attach_kv<A>(self, key: &str, value: A) -> Self
+    fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static,
+        K: Display,
+        V: Display,
     {
         self.attach_printable(format!("{key}: {value}"))
     }
 
     #[track_caller]
-    fn attach_kv_debug<A>(self, key: &str, value: A) -> Self
+    fn attach_kv_debug<K, V>(self, key: K, value: V) -> Self
     where
-        A: fmt::Debug + Send + Sync + 'static,
+        K: Debug,
+        V: Debug,
     {
-        self.attach_printable(format!("{key}: {value:?}"))
+        self.attach_printable(format!("{key:?}: {value:?}"))
     }
 
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
-        S: fmt::Display + fmt::Debug + Send + Sync + 'static,
+        S: Display,
     {
         self.attach_printable(Field::new(name, status))
     }
@@ -546,9 +560,10 @@ impl<C> ToReport<C> for Report<C> {
 pub trait OptionReport {
     type Some;
     fn ok_or_not_found(self) -> Result<Self::Some, Report<NotFound>>;
-    fn ok_or_not_found_kv<A>(self, key: &str, value: A) -> Result<Self::Some, Report<NotFound>>
+    fn ok_or_not_found_kv<K, V>(self, key: K, value: V) -> Result<Self::Some, Report<NotFound>>
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static;
+        K: Display,
+        V: Display;
     fn ok_or_not_found_field(self, field: &'static str) -> Result<Self::Some, Report<NotFound>>;
 }
 
@@ -567,9 +582,10 @@ impl<T> OptionReport for Option<T> {
     }
 
     #[track_caller]
-    fn ok_or_not_found_kv<A>(self, key: &str, value: A) -> Result<T, Report<NotFound>>
+    fn ok_or_not_found_kv<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
     where
-        A: fmt::Display + fmt::Debug + Send + Sync + 'static,
+        K: Display,
+        V: Display,
     {
         match self {
             Some(v) => Ok(v),

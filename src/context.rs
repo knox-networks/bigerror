@@ -89,10 +89,7 @@ impl InvalidInput {
     }
 
     #[track_caller]
-    pub fn expected_actual<A>(expected: A, actual: A) -> Report<Self>
-    where
-        A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
-    {
+    pub fn expected_actual<A: attachment::Display>(expected: A, actual: A) -> Report<Self> {
         Self::with_kv("expected", expected).attach_kv("actual", actual)
     }
 

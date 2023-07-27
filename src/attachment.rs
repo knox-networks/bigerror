@@ -5,6 +5,14 @@ pub use thiserror;
 
 use crate::reportable;
 
+pub trait Display: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {}
+
+impl<A> Display for A where A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {}
+
+pub trait Debug: std::fmt::Debug + Send + Sync + 'static {}
+
+impl<A> Debug for A where A: std::fmt::Debug + Send + Sync + 'static {}
+
 #[derive(Debug, thiserror::Error)]
 #[error("\"{name}\": {status}")]
 pub struct Field<S> {
