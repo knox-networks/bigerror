@@ -68,6 +68,8 @@ reportable!(BuildError);
 
 pub trait CoreError: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
 
+impl<T> CoreError for T where T: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
+
 impl BoxError {
     #[track_caller]
     pub fn new<E>(err: E) -> Report<Self>
