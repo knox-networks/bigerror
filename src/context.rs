@@ -15,6 +15,12 @@ use crate::reportable;
 #[error("{0}")]
 pub struct BoxError(Box<dyn std::error::Error + 'static + Send + Sync>);
 
+// this is a `BoxError` that satistifes `core::error::Error`
+// using `core::fmt::Debug` and `core::fmt::Display`
+#[derive(Debug, thiserror::Error)]
+#[error("{0}")]
+pub struct BoxCoreError(Box<dyn CoreError>);
+
 #[derive(Debug, thiserror::Error)]
 #[error("NetworkError")]
 pub struct NetworkError;
@@ -60,6 +66,8 @@ reportable!(ConfigError);
 pub struct BuildError;
 reportable!(BuildError);
 
+pub trait CoreError: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
+
 impl BoxError {
     #[track_caller]
     pub fn new<E>(err: E) -> Report<Self>
@@ -71,6 +79,17 @@ impl BoxError {
 
     #[track_caller]
     pub fn from(err: Box<dyn std::error::Error + 'static + Send + Sync>) -> Report<Self> {
+        Report::new(Self(err))
+    }
+}
+impl BoxCoreError {
+    #[track_caller]
+    pub fn new<E: CoreError>(err: E) -> Report<Self> {
+        Report::new(Self(Box::new(err)))
+    }
+
+    #[track_caller]
+    pub fn from(err: Box<dyn CoreError>) -> Report<Self> {
         Report::new(Self(err))
     }
 }
