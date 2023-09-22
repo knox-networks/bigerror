@@ -71,7 +71,13 @@ pub trait ReportAs<T> {
 impl<T, E: Context> ReportAs<T> for Result<T, E> {
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
-        self.into_report().change_context(C::value())
+        // TODO #[track_caller] on closure
+        // https://github.com/rust-lang/rust/issues/87417
+        // self.map_err(|e| Report::new(C::value()).attach_printable(e))
+        match self {
+            Ok(v) => Ok(v),
+            Err(e) => Err(Report::new(C::value()).attach_printable(e)),
+        }
     }
 }
 
