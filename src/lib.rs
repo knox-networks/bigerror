@@ -223,6 +223,9 @@ pub trait AttachExt {
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
         S: Display;
+    fn attach_debug<A>(self, value: A) -> Self
+    where
+        A: Debug;
 }
 
 impl<C> AttachExt for error_stack::Report<C> {
@@ -243,11 +246,21 @@ impl<C> AttachExt for error_stack::Report<C> {
     {
         self.attach_printable(format!("{key:?}: {value:?}"))
     }
+
+    #[track_caller]
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
         S: Display,
     {
         self.attach_printable(Field::new(name, status))
+    }
+
+    #[track_caller]
+    fn attach_debug<A>(self, value: A) -> Self
+    where
+        A: Debug,
+    {
+        self.attach_printable(format!("{value:?}"))
     }
 }
 
@@ -275,6 +288,14 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
         S: Display,
     {
         self.attach_printable(Field::new(name, status))
+    }
+
+    #[track_caller]
+    fn attach_debug<A>(self, value: A) -> Self
+    where
+        A: Debug,
+    {
+        self.attach_printable(format!("{value:?}"))
     }
 }
 
