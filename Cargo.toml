@@ -6,8 +6,12 @@ description = "handle big errors ¯\\_(ツ)_/¯"
 license = "MIT"
 
 [features]
-std = ["error-stack/std"]
+default = ["std"]
+std = ["error-stack/std", "error-stack/anyhow"]
 spantrace = ["error-stack/spantrace"]
+eyre = ["error-stack/eyre"]
+serde = ["error-stack/serde"]
+hooks = ["error-stack/hooks"]
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
