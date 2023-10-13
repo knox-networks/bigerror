@@ -2,7 +2,7 @@ use error_stack::fmt::ColorMode;
 use std::fmt;
 use tracing::{debug, error, info, trace, warn, Level};
 
-pub use error_stack::{self, Context, IntoReport, Report, ResultExt};
+pub use error_stack::{self, Context, Report, ResultExt};
 pub use thiserror;
 
 pub mod attachment;
@@ -96,30 +96,29 @@ impl<T> ReportAs<T> for String {
 }
 
 pub trait IntoContext {
-    fn into_ctx<C: Reportable>(self) -> Report<C>;
+    fn into_ctx<C2: Reportable>(self) -> Report<C2>;
 }
 
-impl<T: Context> IntoContext for Report<T> {
+impl<C: Context> IntoContext for Report<C> {
     #[inline]
     #[track_caller]
-    fn into_ctx<C: Reportable>(self) -> Report<C> {
-        self.change_context(C::value())
+    fn into_ctx<C2: Reportable>(self) -> Report<C2> {
+        self.change_context(C2::value())
     }
 }
 
-pub trait ResultIntoContext {
-    /// Type of the [`Ok`] value in the [`Result`]
-    type Ok;
-
-    fn into_ctx<C: Reportable>(self) -> Result<Self::Ok, Report<C>>;
+pub trait ResultIntoContext: ResultExt {
+    fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
 }
 
-impl<T, E: Context> ResultIntoContext for Result<T, Report<E>> {
-    type Ok = T;
+impl<T, C> ResultIntoContext for Result<T, Report<C>>
+where
+    C: Context,
+{
     #[inline]
     #[track_caller]
-    fn into_ctx<C: Reportable>(self) -> Result<T, Report<C>> {
-        self.change_context(C::value())
+    fn into_ctx<C2: Reportable>(self) -> Result<T, Report<C2>> {
+        self.change_context(C2::value())
     }
 }
 
@@ -228,7 +227,7 @@ pub trait AttachExt {
         A: Debug;
 }
 
-impl<C> AttachExt for error_stack::Report<C> {
+impl<C> AttachExt for Report<C> {
     #[track_caller]
     fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
@@ -247,6 +246,7 @@ impl<C> AttachExt for error_stack::Report<C> {
         self.attach_printable(format!("{key:?}: {value:?}"))
     }
 
+    #[inline]
     #[track_caller]
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
@@ -271,31 +271,122 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
         K: Display,
         V: Display,
     {
-        self.attach_printable(format!("{key}: {value}"))
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(report) => Err(report.attach_printable(format!("{key}: {value}"))),
+        }
     }
 
+    #[inline]
     #[track_caller]
     fn attach_kv_debug<K, V>(self, key: K, value: V) -> Self
     where
         K: Debug,
         V: Debug,
     {
-        self.attach_printable(format!("{key:?}: {value:?}"))
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(report) => Err(report.attach_printable(format!("{key:?}: {value:?}"))),
+        }
     }
 
+    #[inline]
+    #[track_caller]
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
         S: Display,
     {
-        self.attach_printable(Field::new(name, status))
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(report) => Err(report.attach_printable(Field::new(name, status))),
+        }
     }
 
+    #[inline]
     #[track_caller]
     fn attach_debug<A>(self, value: A) -> Self
     where
         A: Debug,
     {
-        self.attach_printable(format!("{value:?}"))
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(report) => Err(report.attach_printable(format!("{value:?}"))),
+        }
+    }
+}
+
+pub trait ResultAttachExt: ResultExt {
+    fn attach_kv<K, V>(self, key: K, value: V) -> Result<Self::Ok, Report<Self::Context>>
+    where
+        K: Display,
+        V: Display;
+    fn attach_kv_debug<K, V>(self, key: K, value: V) -> Result<Self::Ok, Report<Self::Context>>
+    where
+        K: Debug,
+        V: Debug;
+
+    fn attach_field_status<S>(
+        self,
+        name: &'static str,
+        status: S,
+    ) -> Result<Self::Ok, Report<Self::Context>>
+    where
+        S: Display;
+    fn attach_debug<A>(self, value: A) -> Result<Self::Ok, Report<Self::Context>>
+    where
+        A: Debug;
+}
+
+impl<T, C> ResultAttachExt for Result<T, C>
+where
+    C: Context,
+{
+    #[inline]
+    #[track_caller]
+    fn attach_kv<K, V>(self, key: K, value: V) -> Result<T, Report<C>>
+    where
+        K: Display,
+        V: Display,
+    {
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(e) => Err(Report::from(e).attach_printable(format!("{key}: {value}"))),
+        }
+    }
+    #[inline]
+    #[track_caller]
+    fn attach_kv_debug<K, V>(self, key: K, value: V) -> Result<T, Report<C>>
+    where
+        K: Debug,
+        V: Debug,
+    {
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(e) => Err(Report::from(e).attach_printable(format!("{key:?}: {value:?}"))),
+        }
+    }
+
+    #[inline]
+    #[track_caller]
+    fn attach_field_status<S>(self, name: &'static str, status: S) -> Result<T, Report<C>>
+    where
+        S: Display,
+    {
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(e) => Err(Report::from(e).attach_printable(Field::new(name, status))),
+        }
+    }
+    #[inline]
+    #[track_caller]
+    fn attach_debug<A>(self, value: A) -> Result<T, Report<C>>
+    where
+        A: Debug,
+    {
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(e) => Err(Report::from(e).attach_printable(format!("{value:?}"))),
+        }
     }
 }
 

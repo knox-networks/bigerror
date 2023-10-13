@@ -6,7 +6,7 @@ use crate::{
 use std::path::Path;
 use tracing::error;
 
-pub use error_stack::{self, Context, IntoReport, Report, ResultExt};
+pub use error_stack::{self, Context, Report, ResultExt};
 pub use thiserror;
 
 use crate::reportable;

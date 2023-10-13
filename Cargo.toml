@@ -5,10 +5,14 @@ edition = "2021"
 description = "handle big errors ¯\\_(ツ)_/¯"
 license = "MIT"
 
+[features]
+std = ["error-stack/std"]
+spantrace = ["error-stack/spantrace"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-error-stack = "0.3.1"
-thiserror = "1.0.43"
-tracing = "0.1.37"
+error-stack = "0.4.1"
+thiserror = "1.0"
+tracing = "0.1"
