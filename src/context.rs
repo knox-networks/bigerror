@@ -110,11 +110,6 @@ impl InvalidInput {
     }
 
     #[track_caller]
-    pub fn expected_actual<A: attachment::Display>(expected: A, actual: A) -> Report<Self> {
-        Self::with_kv("expected", expected).attach_kv("actual", actual)
-    }
-
-    #[track_caller]
     pub fn unsupported() -> Report<Self> {
         Report::new(Self).attach_printable(Unsupported)
     }

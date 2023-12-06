@@ -61,6 +61,11 @@ where
         S: fmt::Display + fmt::Debug + Send + Sync + 'static;
 
     fn value() -> Self;
+
+    #[track_caller]
+    fn expected_actual<A: attachment::Display>(expected: A, actual: A) -> Report<Self> {
+        Self::with_kv("expected", expected).attach_kv("actual", actual)
+    }
 }
 
 /// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
