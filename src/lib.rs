@@ -66,6 +66,18 @@ where
     fn expected_actual<A: attachment::Display>(expected: A, actual: A) -> Report<Self> {
         Self::with_kv("expected", expected).attach_kv("actual", actual)
     }
+
+    #[track_caller]
+    fn with_variant<A: Display>(value: A) -> Report<Self> {
+        let type_name = std::any::type_name::<A>();
+        Self::with_kv_debug(type_name, value)
+    }
+
+    #[track_caller]
+    fn with_variant_debug<A: Debug>(value: A) -> Report<Self> {
+        let type_name = std::any::type_name::<A>();
+        Self::with_kv_debug(type_name, value)
+    }
 }
 
 /// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
@@ -688,6 +700,7 @@ pub trait OptionReport {
         K: Display,
         V: Display;
     fn ok_or_not_found_field(self, field: &'static str) -> Result<Self::Some, Report<NotFound>>;
+    fn ok_or_not_found_by<K: Display>(self, key: K) -> Result<Self::Some, Report<NotFound>>;
 }
 
 impl<T> OptionReport for Option<T> {
@@ -721,6 +734,14 @@ impl<T> OptionReport for Option<T> {
         match self {
             Some(v) => Ok(v),
             None => Err(NotFound::with_field(field)),
+        }
+    }
+
+    #[track_caller]
+    fn ok_or_not_found_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
+        match self {
+            Some(v) => Ok(v),
+            None => Err(NotFound::with_variant(key)),
         }
     }
 }
