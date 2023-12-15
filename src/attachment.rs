@@ -42,3 +42,11 @@ pub struct Unsupported;
 #[derive(Debug, thiserror::Error)]
 #[error("invalid")]
 pub struct Invalid;
+
+// this is meant to explicitly indicate
+// that the underyling `A` is being
+// used as an index key for getter methods
+// such as `HashMap` keys and `Vec` indices
+#[derive(Debug, thiserror::Error)]
+#[error("Index[{0}]")]
+pub struct Index<I: std::fmt::Display>(pub I);

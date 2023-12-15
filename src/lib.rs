@@ -10,7 +10,7 @@ pub mod context;
 
 pub use attachment::Field;
 
-use attachment::{Debug, Display};
+use attachment::{Debug, Display, Index};
 pub use context::*;
 
 // TODO we'll have to do a builder pattern here at
@@ -77,6 +77,12 @@ where
     fn with_variant_debug<A: Debug>(value: A) -> Report<Self> {
         let type_name = std::any::type_name::<A>();
         Self::with_kv_debug(type_name, value)
+    }
+
+    #[track_caller]
+    fn with_type<A>() -> Report<Self> {
+        let type_name = std::any::type_name::<A>();
+        Self::attach(type_name)
     }
 }
 
@@ -713,7 +719,7 @@ impl<T> OptionReport for Option<T> {
         // self.ok_or_else(|| Report::new(NotFound))
         match self {
             Some(v) => Ok(v),
-            None => Err(Report::new(NotFound)),
+            None => Err(NotFound::with_type::<T>()),
         }
     }
 
@@ -741,7 +747,7 @@ impl<T> OptionReport for Option<T> {
     fn ok_or_not_found_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
         match self {
             Some(v) => Ok(v),
-            None => Err(NotFound::with_variant(key)),
+            None => Err(NotFound::with_kv(Index(key), std::any::type_name::<T>())),
         }
     }
 }
