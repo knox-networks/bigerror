@@ -18,7 +18,7 @@ body = """
     ## [unreleased]
 {% endif %}\
 {% for commit in commits %}
-    - {{ commit.message | split(pat="\n") | first | upper_first }}
+    {{ commit.message }}
 {% endfor %}
 """
 # remove the leading and trailing whitespace from the template

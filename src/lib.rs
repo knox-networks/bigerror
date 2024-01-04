@@ -818,7 +818,10 @@ mod test {
     }
 
     #[test]
+    #[should_panic]
     fn error_in_error_handling() {
+        crate::init_colour();
+
         fn output() -> Result<usize, Report<ConversionError>> {
             "NaN"
                 .parse::<usize>()
@@ -831,7 +834,7 @@ mod test {
                 })
         }
 
-        let _ = output().change_context(MyError).unwrap_err();
+        let _ = output().change_context(MyError).unwrap();
     }
     #[test]
     fn option_report() {

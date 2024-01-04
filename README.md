@@ -1,4 +1,26 @@
-# bigerror 🍅🍆🥒 
+# bigerror 🍅🍆🥒
+
+Errors should be composed of reusable parts to make readability consistent.
+
+## example
+
+What if handling an error also produces an error?
+
+
+code:
+
+https://github.com/knox-networks/bigerror/blob/51686e4e42397f4275335a54286210e705ab8ea7/src/lib.rs#L822-L838
+
+command (try it yourself):
+```sh
+$ cargo test -- test::error_in_error_handling --nocapture
+```
+
+output:
+
+<img width="913" alt="image" src="https://github.com/knox-networks/bigerror/assets/11223234/bed07095-64ad-4fc4-bd5d-c770f6c4b19c">
+
+## extra
 
 ```sql
 -- This error crate is intended to
@@ -14,78 +36,4 @@ CREATE CRATE IF NOT EXISTS
   bigerror (
     error BIGERROR NOT NULL,
 );
-```
-
-
-# example
-
-```rust
-use bigerror::{
-    from_report, reportable, to_report, BoxError, ConversionError, DbError, NetworkError, NotFound,
-    ParseError, Report, ReportAs, Reportable, ResultExt,
-};
-use uuid::Uuid;
-
-#[derive(Debug, thiserror::Error)]
-#[error("MyError")]
-pub struct MyError;
-
-// https://docs.rs/bigerror/latest/bigerror/trait.Reportable.html
-reportable!(MyError);
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("{0:?}")]
-    Report(Report<MyError>),
-    /// we want to preserve this for match arm purposes
-    #[error(transparent)]
-    TonicStatus(#[from] tonic::Status),
-}
-
-from_report!({
-    impl From<OtherError as ToReport<_>>
-
-    impl From<std::io::Error>
-    impl From<tonic::transport::Error as NetworkError>
-    impl From<std::num::ParseIntError as ParseError>
-    impl From<sqlx::Error as DbError>
-
-    for Error::Report(MyError)
-});
-
-#[derive(Debug, thiserror::Error)]
-pub enum OtherError {
-    #[error("{0:?}")]
-    Report(Report<NotFound>),
-}
-
-to_report!(impl ToReport<NotFound> for OtherError::Report);
-
-fn conversion_error() -> Result<usize, Report<ConversionError>> {
-    "NaN"
-        .parse::<usize>()
-        .map_err(ConversionError::from::<&str, usize>)
-        .attach(ParseError)
-}
-
-fn box_error() -> Result<usize, Report<BoxError>> {
-    fn inner() -> Result<usize, Box<dyn std::error::Error + Sync + Send>> {
-        Ok("NaN".parse::<usize>().map_err(Box::new)?)
-    }
-
-    inner().map_err(BoxError::from)
-}
-
-fn main() -> Result<(), Report<MyError>> {
-    let conversion = conversion_error().change_context(MyError)?;
-
-    let box_error = box_error().change_context(MyError)?;
-
-    let other_err = Err(OtherError::Report(NotFound::with_kv("id", Uuid::new_v4())));
-    other_err.map_err(MyError::report_inner)?;
-
-    "NaN".parse::<usize>().report_as()?;
-
-    Ok(())
-}
 ```
