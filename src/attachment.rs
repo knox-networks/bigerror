@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use tracing::error;
 
 pub use error_stack::{self, Context, Report, ResultExt};
@@ -42,6 +44,46 @@ pub struct Unsupported;
 #[derive(Debug, thiserror::Error)]
 #[error("invalid")]
 pub struct Invalid;
+
+pub struct DisplayDuration(pub Duration);
+impl std::fmt::Display for DisplayDuration {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", hms_string(self.0))
+    }
+}
+
+impl From<Duration> for DisplayDuration {
+    fn from(duration: Duration) -> Self {
+        Self(duration)
+    }
+}
+
+/// convert a [`Duration`] into a "0H00m00s" string
+pub fn hms_string(duration: Duration) -> String {
+    if duration.is_zero() {
+        return "ZERO".to_string();
+    }
+    let s = duration.as_secs();
+    let ms = duration.subsec_millis();
+    // if only milliseconds available
+    if s == 0 {
+        return format!("{ms}ms");
+    }
+    // Grab total hours from seconds
+    let (h, s) = (s / 3600, s % 3600);
+    let (m, s) = (s / 60, s % 60);
+
+    let mut hms = String::new();
+    if h != 0 {
+        hms += &format!("{h:02}H");
+    }
+    if m != 0 {
+        hms += &format!("{m:02}m");
+    }
+    hms += &format!("{s:02}s");
+
+    hms
+}
 
 // this is meant to explicitly indicate
 // that the underyling `A` is being

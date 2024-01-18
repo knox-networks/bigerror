@@ -1,9 +1,9 @@
 use crate::{
-    attachment::{self, Field, Unsupported},
+    attachment::{self, DisplayDuration, Field, Unsupported},
     AttachExt, Reportable,
 };
 
-use std::path::Path;
+use std::{path::Path, time::Duration};
 use tracing::error;
 
 pub use error_stack::{self, Context, Report, ResultExt};
@@ -65,6 +65,10 @@ reportable!(ConfigError);
 #[error("BuildError")]
 pub struct BuildError;
 reportable!(BuildError);
+
+#[derive(Debug, thiserror::Error)]
+#[error("{}", Field::new("timeout", DisplayDuration(*.0)))]
+pub struct Timeout(pub Duration);
 
 pub trait CoreError: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
 

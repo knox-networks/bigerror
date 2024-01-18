@@ -84,6 +84,12 @@ where
         let type_name = std::any::type_name::<A>();
         Self::attach(type_name)
     }
+
+    #[track_caller]
+    fn with_type_status<A, S: Display>(status: S) -> Report<Self> {
+        let type_name = std::any::type_name::<A>();
+        Self::attach(Field::new(type_name, status))
+    }
 }
 
 /// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
