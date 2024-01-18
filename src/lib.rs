@@ -86,7 +86,7 @@ where
     }
 
     #[track_caller]
-    fn with_type_status<A, S: Display>(status: S) -> Report<Self> {
+    fn with_type_status<A>(status: impl Display) -> Report<Self> {
         let type_name = std::any::type_name::<A>();
         Self::attach(Field::new(type_name, status))
     }
@@ -761,6 +761,8 @@ impl<T> OptionReport for Option<T> {
 #[cfg(test)]
 mod test {
 
+    use crate::attachment::Invalid;
+
     use super::*;
 
     #[derive(Debug, thiserror::Error)]
@@ -887,5 +889,18 @@ mod test {
         }
 
         assert!(output().is_err())
+    }
+
+    #[test]
+    #[should_panic]
+    fn with_type_status() {
+        fn try_even(num: usize) -> Result<(), Report<MyError>> {
+            if num % 2 != 0 {
+                return Err(InvalidInput::with_type_status::<usize>(Invalid).into_ctx());
+            }
+            Ok(())
+        }
+
+        let _ = try_even(3).unwrap();
     }
 }
