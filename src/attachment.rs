@@ -15,16 +15,44 @@ pub trait Debug: std::fmt::Debug + Send + Sync + 'static {}
 
 impl<A> Debug for A where A: std::fmt::Debug + Send + Sync + 'static {}
 
-#[derive(Debug, thiserror::Error)]
-#[error("\"{name}\": {status}")]
-pub struct Field<S> {
-    name: &'static str,
+#[derive(Debug)]
+pub struct Field<K, S> {
+    key: K,
     status: S,
 }
 
-impl<S> Field<S> {
-    pub fn new(name: &'static str, status: S) -> Self {
-        Self { name, status }
+impl<K: Display, S: Display> std::fmt::Display for Field<K, S> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.key, self.status)
+    }
+}
+
+impl<K: Display, S: Display> Field<K, S> {
+    pub fn new(key: K, status: S) -> Self {
+        Self { key, status }
+    }
+}
+
+/// wrapper attachment that is used to refer to the type of an object
+/// rather than the value
+pub struct Type(&'static str);
+
+impl Type {
+    // const fn when type_name is const fn in stable
+    pub fn of<T>() -> Self {
+        Self(std::any::type_name::<T>())
+    }
+}
+
+impl std::fmt::Display for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<{}>", self.0)
+    }
+}
+
+impl std::fmt::Debug for Type {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Type").field(&self.0).finish()
     }
 }
 
@@ -45,6 +73,7 @@ pub struct Unsupported;
 #[error("invalid")]
 pub struct Invalid;
 
+#[derive(Debug)]
 pub struct DisplayDuration(pub Duration);
 impl std::fmt::Display for DisplayDuration {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

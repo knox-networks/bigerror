@@ -17,6 +17,7 @@ hooks = ["error-stack/hooks"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+const-str = "0.5.6"
 error-stack = "0.4.1"
 thiserror = "1"
 tracing = "0.1"

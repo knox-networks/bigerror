@@ -56,9 +56,10 @@ where
         K: Display,
         V: Display;
     fn report_inner<C: Context>(err: impl ToReport<C>) -> Report<Self>;
-    fn with_field_status<S>(name: &'static str, status: S) -> Report<Self>
+    fn with_field_status<K, S>(key: K, status: S) -> Report<Self>
     where
-        S: fmt::Display + fmt::Debug + Send + Sync + 'static;
+        K: Display,
+        S: Display;
 
     fn value() -> Self;
 
@@ -69,26 +70,22 @@ where
 
     #[track_caller]
     fn with_variant<A: Display>(value: A) -> Report<Self> {
-        let type_name = std::any::type_name::<A>();
-        Self::with_kv_debug(type_name, value)
+        Self::with_kv_debug(attachment::Type::of::<A>(), value)
     }
 
     #[track_caller]
     fn with_variant_debug<A: Debug>(value: A) -> Report<Self> {
-        let type_name = std::any::type_name::<A>();
-        Self::with_kv_debug(type_name, value)
+        Self::with_kv_debug(attachment::Type::of::<A>(), value)
     }
 
     #[track_caller]
     fn with_type<A>() -> Report<Self> {
-        let type_name = std::any::type_name::<A>();
-        Self::attach(type_name)
+        Self::attach(attachment::Type::of::<A>())
     }
 
     #[track_caller]
-    fn with_type_status<A>(status: impl Display) -> Report<Self> {
-        let type_name = std::any::type_name::<A>();
-        Self::attach(Field::new(type_name, status))
+    fn with_type_status<A: Send + Sync + 'static>(status: impl Display) -> Report<Self> {
+        Self::attach(Field::new(attachment::Type::of::<A>(), status))
     }
 }
 
@@ -224,13 +221,15 @@ macro_rules! reportable {
             }
 
             #[track_caller]
-            fn with_field_status<S>(name: &'static str, status: S) -> $crate::Report<Self>
+            fn with_field_status<K, S>(key: K, status: S) -> $crate::Report<Self>
             where
-                S: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static,
+                K: $crate::attachment::Display,
+                S: $crate::attachment::Display,
             {
                 $crate::Report::new(Self)
-                    .attach_printable($crate::attachment::Field::new(name, status))
+                    .attach_printable($crate::attachment::Field::new(key, status))
             }
+
             fn value() -> Self {
                 $context
             }
@@ -753,7 +752,7 @@ impl<T> OptionReport for Option<T> {
     fn ok_or_not_found_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
         match self {
             Some(v) => Ok(v),
-            None => Err(NotFound::with_kv(Index(key), std::any::type_name::<T>())),
+            None => Err(NotFound::with_kv(Index(key), attachment::Type::of::<K>())),
         }
     }
 }
