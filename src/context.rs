@@ -1,6 +1,6 @@
 use crate::{
     attachment::{self, DisplayDuration, Field, Unsupported},
-    AttachExt, Reportable,
+    AttachExt, ContextHeader, Reportable,
 };
 
 use std::{path::Path, time::Duration};
@@ -47,9 +47,41 @@ pub struct ConversionError;
 reportable!(ConversionError);
 
 #[derive(Debug, thiserror::Error)]
-#[error("InvalidInput")]
-pub struct InvalidInput;
-reportable!(InvalidInput);
+#[error("InvalidInput{0}")]
+pub struct InvalidInput(Header);
+
+// a context header
+#[derive(Debug)]
+pub struct Header(Option<Box<dyn attachment::Display>>);
+
+impl Header {
+    pub fn new(value: impl attachment::Display) -> Self {
+        Self(Some(Box::new(value)))
+    }
+}
+
+impl std::fmt::Display for Header {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(attachment) = &self.0 {
+            // lead with a colon so that the parent context does not have to worry about optionality
+            write!(f, ": {attachment}")
+        } else {
+            write!(f, "")
+        }
+    }
+}
+
+impl ContextHeader for InvalidInput {
+    fn set_header(value: impl attachment::Display) -> Self {
+        Self(Header::new(value))
+    }
+}
+
+impl Default for InvalidInput {
+    fn default() -> Self {
+        Self(Header(None))
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 #[error("InvalidStatus")]
@@ -104,18 +136,12 @@ impl InvalidInput {
     #[track_caller]
     pub fn with_path(path: impl AsRef<Path>) -> Report<Self> {
         let path = path.as_ref().display().to_string();
-        Report::new(Self).attach_kv("path", path)
-    }
-
-    #[track_caller]
-    pub fn type_name<T: ?Sized>() -> Report<Self> {
-        let type_name = std::any::type_name::<T>();
-        Report::new(Self).attach_printable(format!("type: {type_name}"))
+        Report::new(Self::default()).attach_kv("path", path)
     }
 
     #[track_caller]
     pub fn unsupported() -> Report<Self> {
-        Report::new(Self).attach_printable(Unsupported)
+        Self::attach(Unsupported)
     }
 }
 

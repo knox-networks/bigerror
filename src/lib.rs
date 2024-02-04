@@ -10,7 +10,7 @@ pub mod context;
 
 pub use attachment::Field;
 
-use attachment::{Debug, Display, Index};
+use attachment::{Debug, Display, Index, KeyValue};
 pub use context::*;
 
 // TODO we'll have to do a builder pattern here at
@@ -51,11 +51,6 @@ where
     where
         K: Debug,
         V: Debug;
-    fn report_with_kv<K, V, C: Context>(ctx: C, key: K, value: V) -> Report<Self>
-    where
-        K: Display,
-        V: Display;
-    fn report_inner<C: Context>(err: impl ToReport<C>) -> Report<Self>;
     fn with_field_status<K, S>(key: K, status: S) -> Report<Self>
     where
         K: Display,
@@ -87,6 +82,10 @@ where
     fn with_type_status<A: Send + Sync + 'static>(status: impl Display) -> Report<Self> {
         Self::attach(Field::new(attachment::Type::of::<A>(), status))
     }
+}
+
+pub trait ContextHeader: Context + Default {
+    fn set_header(value: impl Display) -> Self;
 }
 
 /// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
@@ -148,6 +147,57 @@ where
     }
 }
 
+impl<T> Reportable for T
+where
+    T: Sized + Context + Default + ContextHeader,
+{
+    fn report<C: Context>(ctx: C) -> Report<Self> {
+        Report::new(ctx).change_context(Self::default())
+    }
+
+    fn attach<A>(value: A) -> Report<Self>
+    where
+        A: Display,
+    {
+        Report::new(Self::set_header(value))
+    }
+
+    fn attach_debug<A>(value: A) -> Report<Self>
+    where
+        A: Debug,
+    {
+        Report::new(Self::default()).attach_printable(format!("{value:?}"))
+    }
+
+    fn with_kv<K, V>(key: K, value: V) -> Report<Self>
+    where
+        K: Display,
+        V: Display,
+    {
+        Report::new(Self::set_header(KeyValue(key, value)))
+    }
+
+    fn with_kv_debug<K, V>(key: K, value: V) -> Report<Self>
+    where
+        K: Debug,
+        V: Debug,
+    {
+        Report::new(Self::set_header(KeyValue::dbg(key, value)))
+    }
+
+    fn with_field_status<K, S>(key: K, status: S) -> Report<Self>
+    where
+        K: Display,
+        S: Display,
+    {
+        Report::new(Self::set_header(Field::new(key, status)))
+    }
+
+    fn value() -> Self {
+        Self::default()
+    }
+}
+
 // TODO convert to #[derive(Reportable)]
 #[macro_export]
 macro_rules! reportable {
@@ -198,29 +248,6 @@ macro_rules! reportable {
                 $crate::Report::new(Self).attach_kv_debug(key, value)
             }
             #[track_caller]
-            fn report_with_kv<K, V, C: $crate::Context>(
-                ctx: C,
-                key: K,
-                value: V,
-            ) -> $crate::Report<Self>
-            where
-                K: $crate::attachment::Display,
-                V: $crate::attachment::Display,
-            {
-                use $crate::AttachExt;
-                $crate::Report::new(ctx)
-                    .change_context(Self)
-                    .attach_kv(key, value)
-            }
-            #[track_caller]
-            fn report_inner<C>(err: impl $crate::ToReport<C>) -> $crate::Report<Self>
-            where
-                C: $crate::Context,
-            {
-                err.to_report().change_context(Self)
-            }
-
-            #[track_caller]
             fn with_field_status<K, S>(key: K, status: S) -> $crate::Report<Self>
             where
                 K: $crate::attachment::Display,
@@ -262,7 +289,7 @@ impl<C> AttachExt for Report<C> {
         K: Display,
         V: Display,
     {
-        self.attach_printable(format!("{key}: {value}"))
+        self.attach_printable(KeyValue(key, value))
     }
 
     #[track_caller]
@@ -271,7 +298,7 @@ impl<C> AttachExt for Report<C> {
         K: Debug,
         V: Debug,
     {
-        self.attach_printable(format!("{key:?}: {value:?}"))
+        self.attach_printable(KeyValue::dbg(key, value))
     }
 
     #[inline]
@@ -301,7 +328,7 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(report) => Err(report.attach_printable(format!("{key}: {value}"))),
+            Err(report) => Err(report.attach_printable(KeyValue(key, value))),
         }
     }
 
@@ -314,7 +341,7 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(report) => Err(report.attach_printable(format!("{key:?}: {value:?}"))),
+            Err(report) => Err(report.attach_printable(KeyValue::dbg(key, value))),
         }
     }
 
@@ -378,7 +405,7 @@ where
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(e) => Err(Report::from(e).attach_printable(format!("{key}: {value}"))),
+            Err(e) => Err(Report::from(e).attach_printable(KeyValue(key, value))),
         }
     }
     #[inline]
@@ -390,7 +417,7 @@ where
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(e) => Err(Report::from(e).attach_printable(format!("{key:?}: {value:?}"))),
+            Err(e) => Err(Report::from(e).attach_printable(KeyValue::dbg(key, value))),
         }
     }
 
@@ -900,6 +927,6 @@ mod test {
             Ok(())
         }
 
-        let _ = try_even(3).unwrap();
+        try_even(3).unwrap();
     }
 }
