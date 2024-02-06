@@ -489,6 +489,22 @@ where
     }
 }
 
+pub trait ClearResult<T, E> {
+    fn clear_err(self) -> Result<T, ()>;
+
+    fn clear_ok(self) -> Result<(), E>;
+}
+
+impl<T, E> ClearResult<T, E> for Result<T, E> {
+    fn clear_err(self) -> Result<T, ()> {
+        self.map_err(|_| ())
+    }
+
+    fn clear_ok(self) -> Result<(), E> {
+        self.map(|_| ())
+    }
+}
+
 pub trait ToReport<T> {
     #[track_caller]
     fn to_report(self) -> Report<T>;
