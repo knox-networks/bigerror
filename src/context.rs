@@ -1,9 +1,9 @@
 use crate::{
     attachment::{self, DisplayDuration, Field, Unsupported},
-    AttachExt, ContextHeader, Reportable,
+    AttachExt, Reportable, WithHeader,
 };
 
-use std::{path::Path, time::Duration};
+use std::{borrow::Cow, path::Path, time::Duration};
 use tracing::error;
 
 pub use error_stack::{self, Context, Report, ResultExt};
@@ -48,38 +48,50 @@ reportable!(ConversionError);
 
 #[derive(Debug, thiserror::Error)]
 #[error("InvalidInput{0}")]
-pub struct InvalidInput(Header);
+pub struct InvalidInput(pub(crate) Header);
 
 // a context header
-#[derive(Debug)]
-pub struct Header(Option<Box<dyn attachment::Display>>);
+#[derive(Debug, Default)]
+pub enum Header {
+    Slice(&'static str),
+    String(String),
+    #[default]
+    Empty,
+}
 
-impl Header {
-    pub fn new(value: impl attachment::Display) -> Self {
-        Self(Some(Box::new(value)))
+impl From<String> for Header {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+
+impl From<&'static str> for Header {
+    fn from(value: &'static str) -> Self {
+        Self::Slice(value)
     }
 }
 
 impl std::fmt::Display for Header {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(attachment) = &self.0 {
-            // lead with a colon so that the parent context does not have to worry about optionality
-            write!(f, ": {attachment}")
-        } else {
-            write!(f, "")
-        }
+        let msg = match self {
+            Header::Slice(msg) => msg,
+            Header::String(s) => s.as_str(),
+            Header::Empty => return write!(f, ""),
+        };
+        // lead with a colon so that the parent context does not have to worry about optionality
+        write!(f, ": {msg}")
     }
 }
 
-impl ContextHeader for InvalidInput {
-    fn set_header(value: impl attachment::Display) -> Self {
-        Self(Header::new(value))
+impl WithHeader for InvalidInput {
+    fn header(msg: impl Into<Header>) -> Self {
+        Self(msg.into())
     }
 }
 
 impl Default for InvalidInput {
     fn default() -> Self {
-        Self(Header(None))
+        Self(Header::Empty)
     }
 }
 

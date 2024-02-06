@@ -1,11 +1,14 @@
 use std::time::Duration;
 
+use error_stack::fmt::ColorMode;
+use owo_colors::OwoColorize;
 use tracing::error;
 
 pub use error_stack::{self, Context, Report, ResultExt};
 pub use thiserror;
 
-use crate::reportable;
+use crate::WithHeader;
+use crate::{context, reportable, Header};
 
 pub trait Display: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {}
 
@@ -51,6 +54,8 @@ impl<Id: Display, S: Display> Field<Id, S> {
     }
 }
 
+// MustBe(Empty)
+// MustBe(Empty)
 #[derive(Debug, thiserror::Error)]
 #[error("must be {0}")]
 pub struct MustBe<T>(T);
@@ -60,14 +65,17 @@ pub struct OneOf<T: Display, const U: usize>([T; U], &'static str);
 
 impl<T: Display, const U: usize> std::fmt::Display for OneOf<T, U> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // assume that the variants are in a report attachment list
-        if self.0.is_empty() {
-            return write!(f, "one of:");
-        }
         let these: Vec<String> = self.0.iter().map(|t| format!("{t}")).collect();
+        if self.1 == "\n" {
+            writeln!(f, "one of:")?;
+            for t in these {
+                writeln!(f, "- {t}")?;
+            }
+            return Ok(());
+        }
         write!(
             f,
-            "one of these: {}",
+            "one of: {}",
             these
                 // https://gist.github.com/green-s/fbd0d374b290781ac9b3f8ff03e3245d
                 .iter()
@@ -84,17 +92,17 @@ impl<T: Display, const U: usize> std::fmt::Display for OneOf<T, U> {
 
 #[macro_export]
 macro_rules! oneof {
-    ($($t:ty,)+,?) => {
-        $crate::attachment::OneOf([$($crate::ty!($t),)*])
+    ($($type:ty),+ $(,)?) => {
+        $crate::attachment::OneOf([$($crate::ty!($type)),+], ", ")
     };
-    ($($t:ty)|+) => {
-        $crate::attachment::OneOf([$($crate::ty!($t),)*])
+    ($($type:ty)|+) => {
+        $crate::attachment::OneOf([$($crate::ty!($type),)*], " or ")
     };
     ($($lit:literal,)+) => {
         $crate::attachment::OneOf([$(stringify!($lit),)*], ", ")
     };
     ($( $lit:literal )|+ ) => {
-        $crate::attachment::OneOf([$(stringify!($lit),)*], " or ")
+        $crate::attachment::OneOf([$(stringify!($lit),)*], "\n")
     }
 
 }
@@ -121,10 +129,25 @@ impl std::fmt::Debug for Type {
         f.debug_tuple("Type").field(&self.0).finish()
     }
 }
+
+// TODO
+pub(crate) fn install_attachment_hooks() {
+    Report::install_debug_hook::<Type>(|Type(ty), context| {
+        println!("IN TYPE HOOK");
+        let ty = match context.color_mode() {
+            ColorMode::Color => ty.yellow().to_string(),
+            ColorMode::Emphasis => ty.italic().to_string(),
+            ColorMode::None => ty.to_string(),
+        };
+        let body = format!("<{}>", ty);
+        context.push_body(body)
+    });
+}
+
 #[macro_export]
 macro_rules! ty {
-    ($t:ident) => {
-        $crate::attachment::Type::of::<$t>()
+    ($type:ty) => {
+        $crate::attachment::Type::of::<$type>()
     };
 }
 
@@ -145,11 +168,33 @@ pub struct Unsupported;
 #[error("invalid")]
 pub struct Invalid;
 
+// mod subject
+#[derive(Default)]
+pub struct Input(Header);
+
+impl Input {
+    pub fn must_be<T: Display>(self, expectation: T) -> Report<context::InvalidInput> {
+        Report::new(context::InvalidInput(self.0)).attach_printable(MustBe(expectation))
+    }
+}
+
+impl WithHeader for Input {
+    fn header(msg: impl Into<Header>) -> Self {
+        Self(msg.into())
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
-#[error("invalid")]
 pub struct Expectation<E, A> {
-    expected: E,
-    actual: A,
+    pub expected: E,
+    pub actual: A,
+}
+
+impl<E: Display, A: Display> std::fmt::Display for Expectation<E, A> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}", KeyValue("expected", &self.expected))?;
+        writeln!(f, "{}", KeyValue("actual", &self.actual))
+    }
 }
 
 #[derive(Debug)]
@@ -212,7 +257,7 @@ mod test {
 
     use error_stack::bail;
 
-    use crate::{InvalidInput, Reportable};
+    use crate::{InvalidInput, ParseError, Reportable, ResultIntoContext};
 
     use super::*;
 
@@ -228,15 +273,16 @@ mod test {
 
         fn from_str(s: &str) -> Result<Self, Self::Err> {
             let flag = match s {
-                "--help" | "-h" => Self::Help,
-                "--version" | "-v" => Self::Version,
+                "--help" => Self::Help,
+                "--version" => Self::Version,
                 "--dry-run" => Self::DryRun,
-                _ => bail!(InvalidInput::attach(s.to_string())),
+                _ => bail!(InvalidInput::header(s.to_string())),
             };
             Ok(flag)
         }
     }
 
+    // Invalid("--verbose")::must_be(oneof!(...))
     #[test]
     fn oneof_comma() {
         crate::init_colour();
@@ -260,6 +306,31 @@ mod test {
             let flag = "--verbose";
             flag.parse::<MyFlag>()
                 .attach_printable(MustBe(oneof!("--help" | "--version" | "--dry-run")))
+        }
+        eprintln!("{:?}", output().unwrap_err())
+    }
+
+    #[test]
+    fn oneof_shorthand() {
+        crate::init_colour();
+        fn output() -> Result<MyFlag, Report<InvalidInput>> {
+            let flag: &str = "--verbose";
+            // Input::new(flag)
+            let report = Input(flag.into()).must_be(oneof!("--help" | "--version" | "--dry-run"));
+            Err(report)
+        }
+        eprintln!("{:?}", output().unwrap_err())
+    }
+
+    #[test]
+    fn oneof_type() {
+        crate::init_colour();
+        install_attachment_hooks();
+        fn output() -> Result<MyFlag, Report<InvalidInput>> {
+            let input: f32 = 32.54;
+            // Input::new(flag)
+            let report = Input::header_fmt(input).must_be(oneof!(u8, u16, u32));
+            Err(report)
         }
         eprintln!("{:?}", output().unwrap_err())
     }
