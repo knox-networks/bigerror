@@ -900,8 +900,6 @@ mod test {
     #[test]
     #[should_panic]
     fn error_in_error_handling() {
-        crate::init_colour();
-
         fn output() -> Result<usize, Report<ConversionError>> {
             "NaN"
                 .parse::<usize>()
@@ -965,8 +963,6 @@ mod test {
 
     #[test]
     fn with_type_status() {
-        crate::init_colour();
-
         fn try_even(num: usize) -> Result<(), Report<MyError>> {
             if num % 2 != 0 {
                 return Err(InvalidInput::with_type_status::<usize>(Invalid).into_ctx());
