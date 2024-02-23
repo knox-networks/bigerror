@@ -7,3 +7,7 @@ _default:
 fmt:
     rustup run nightly cargo fmt -- \
       --config-path ./fmt/rustfmt.toml
+
+# Prints the error stack for a given test to stdout
+printerr test $PRINTERR="true":
+  @cargo test --quiet --lib -- --exact {{test}} --nocapture
