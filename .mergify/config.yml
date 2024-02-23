@@ -25,15 +25,6 @@ pull_request_rules:
           Approved by: @{{ approved_reviews_by | join(', @') }}
           ============
           {{ body }}
-          ============
-          {% set authors = [] %}
-          {%- for commit in commits if (commit.author,commit.email_author) not in authors
-          and not commit.author.startswith('mergify') %}
-          {{- authors.append((commit.author, commit.email_author)) or "" -}}
-          {% endfor %}
-          {%- for (author, email) in authors if authors|length > 1 -%}
-          Co-Authored-By: {{ author }} <{{ email }}>
-          {% endfor %}
 
   - name: cleanup post-merge
     conditions:
