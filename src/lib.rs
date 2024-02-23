@@ -840,14 +840,14 @@ mod test {
             assert!($result.is_err(), "{:?}", $result.unwrap());
             if option_env!("PRINTERR").is_some() {
                 crate::init_colour();
-                println!("{:?}", $result.unwrap_err());
+                println!("\n{:?}", $result.unwrap_err());
             }
         };
         ($result:expr, $($arg:tt)+) => {
             assert!($result.is_err(), $($arg)+);
             if option_env!("PRINTERR").is_some() {
                 crate::init_colour();
-                println!("{:?}", $result.unwrap_err());
+                println!("\n{:?}", $result.unwrap_err());
             }
         };
     }
@@ -899,7 +899,6 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
     fn error_in_error_handling() {
         fn output() -> Result<usize, Report<ConversionError>> {
             "NaN"

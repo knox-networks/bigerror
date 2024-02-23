@@ -11,3 +11,6 @@ fmt:
 # Prints the error stack for a given test to stdout
 printerr test $PRINTERR="true":
   @cargo test --quiet --lib -- --exact {{test}} --nocapture
+
+printerr-all $PRINTERR="true":
+  @cargo test --quiet --lib -- --exact --nocapture
