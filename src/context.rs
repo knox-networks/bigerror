@@ -42,6 +42,16 @@ pub struct DbError;
 reportable!(DbError);
 
 #[derive(Debug, thiserror::Error)]
+#[error("FsError")]
+pub struct FsError;
+reportable!(FsError);
+
+#[derive(Debug, thiserror::Error)]
+#[error("SetupError")]
+pub struct SetupError;
+reportable!(SetupError);
+
+#[derive(Debug, thiserror::Error)]
 #[error("ConversionError")]
 pub struct ConversionError;
 reportable!(ConversionError);
