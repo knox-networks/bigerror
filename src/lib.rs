@@ -490,6 +490,7 @@ where
 }
 
 pub trait ClearResult<T, E> {
+    #[allow(clippy::result_unit_err)]
     fn clear_err(self) -> Result<T, ()>;
 
     fn clear_ok(self) -> Result<(), E>;
