@@ -778,23 +778,25 @@ impl<T> OptionReport for Option<T> {
 #[macro_export]
 macro_rules! __field {
     ($fn:path | &$body:ident . $($rest:tt)+) => {
-        $crate::__field!($fn | &@[$body], $($rest)+)
+        $fn(&$body.$($rest)+, $crate::__field!(@[$body], .$($rest)+))
     };
     ($fn:path | $body:ident . $($rest:tt)+) => {
-        $crate::__field!($fn | @[$body], $($rest)+)
+        $fn($body.$($rest)+, $crate::__field!(@[$body], .$($rest)+))
     };
-    ($fn:path | &@[$($pre:ident)+], $body:ident . $($rest:tt)+) => {
-        $crate::__field!($fn | &@[$($pre)+ $body], $($rest)+)
+    // handle optional method calls: self.x.as_ref()
+    (@[$($pre:ident)+], . $field:ident $(.$method:ident())* ) => {
+        stringify!($field)
     };
-    ($fn:path | @[$($pre:ident)+], $body:ident . $($rest:tt)+) => {
-        $crate::__field!($fn | @[$($pre)+ $body], $($rest)+)
+    (@[$body:ident], $(.$method:ident())* ) => {
+        stringify!($body)
     };
-    ($fn:path | &@[$($pre:ident)+], $field:ident) => {
-        $fn(&$($pre.)+$field, stringify!($field))
+
+    // much TTs
+    (@[$($pre:ident)+], . $field:ident . $($rest:tt)+) => {
+        $crate::__field!(@[$($pre)+ $field], $($rest)+)
     };
-    ($fn:path | @[$($pre:ident)+], $field:ident) => {
-        $fn($($pre.)+$field, stringify!($field))
-    };
+
+    // simple cases
     ($fn:path | &$field:ident) => {
         $fn(&$field, stringify!($field))
     };
@@ -978,7 +980,7 @@ mod test {
     fn expect_field() {
         let my_struct = MyStruct { my_field: None };
 
-        let my_field = expect_field!(my_struct.my_field);
+        let my_field = expect_field!(my_struct.my_field.as_ref());
 
         assert_err!(my_field);
     }
