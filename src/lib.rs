@@ -876,7 +876,7 @@ mod test {
                     Ok(attachment) => e.attach_printable(attachment),
                     Err(attachment_err) => e
                         .attach_printable(ParseError)
-                        .attach_kv("val: \"More Nan\"", attachment_err),
+                        .attach_kv("\"More Nan\"", attachment_err),
                 })
         }
 
@@ -911,7 +911,7 @@ mod test {
         fn output() -> Result<usize, Report<MyError>> {
             "NaN"
                 .parse::<usize>()
-                .map_err(|e| ConversionError::new::<&str, usize>(e).into_ctx())
+                .map_err(|e| ConversionError::from::<&str, usize>(e).into_ctx())
         }
 
         assert_err!(output());
@@ -922,7 +922,7 @@ mod test {
         fn output() -> Result<usize, Report<MyError>> {
             "NaN"
                 .parse::<usize>()
-                .map_err(ConversionError::new::<&str, usize>)
+                .map_err(|e| ConversionError::from::<&str, usize>(e))
                 .into_ctx()
         }
 

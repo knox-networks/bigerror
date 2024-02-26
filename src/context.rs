@@ -4,7 +4,7 @@ use std::time::Duration;
 use error_stack::Context;
 
 use crate::attachment::{self, Unsupported};
-use crate::{ty, AttachExt, Report};
+use crate::{ty, AttachExt, Report, Reportable};
 
 use crate::{attachment::DisplayDuration, reportable, Field};
 
@@ -130,6 +130,13 @@ impl ConversionError {
     #[track_caller]
     pub fn new<F, T>() -> Report<Self> {
         Report::new(Self)
+            .attach_printable(format!("from: {}", ty!(F)))
+            .attach_printable(format!("to: {}", ty!(T)))
+    }
+
+    #[track_caller]
+    pub fn from<F, T>(ctx: impl Context) -> Report<Self> {
+        Self::report(ctx)
             .attach_printable(format!("from: {}", ty!(F)))
             .attach_printable(format!("to: {}", ty!(T)))
     }
