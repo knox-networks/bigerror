@@ -1,15 +1,12 @@
-use crate::{
-    attachment::{self, DisplayDuration, Field, Unsupported},
-    AttachExt, Reportable,
-};
+use std::path::Path;
+use std::time::Duration;
 
-use std::{path::Path, time::Duration};
-use tracing::error;
+use error_stack::Context;
 
-pub use error_stack::{self, Context, Report, ResultExt};
-pub use thiserror;
+use crate::attachment::{self, Unsupported};
+use crate::{ty, AttachExt, Report};
 
-use crate::reportable;
+use crate::{attachment::DisplayDuration, reportable, Field};
 
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
@@ -131,25 +128,10 @@ impl InvalidInput {
 
 impl ConversionError {
     #[track_caller]
-    pub fn new<F: ?Sized, T: ?Sized>() -> Report<Self> {
-        let from = std::any::type_name::<F>();
-        let to = std::any::type_name::<T>();
+    pub fn new<F, T>() -> Report<Self> {
         Report::new(Self)
-            .attach_printable(format!("from: {from}"))
-            .attach_printable(format!("to: {to}"))
-    }
-
-    #[track_caller]
-    pub fn from<F, T>(ctx: impl Context) -> Report<Self>
-    where
-        F: ?Sized,
-        T: ?Sized,
-    {
-        let from = std::any::type_name::<F>();
-        let to = std::any::type_name::<T>();
-        Self::report(ctx)
-            .attach_printable(format!("from: {from}"))
-            .attach_printable(format!("to: {to}"))
+            .attach_printable(format!("from: {}", ty!(F)))
+            .attach_printable(format!("to: {}", ty!(T)))
     }
 }
 
