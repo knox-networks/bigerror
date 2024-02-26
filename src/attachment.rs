@@ -1,12 +1,11 @@
 use std::time::Duration;
 
-
 use tracing::error;
 
 pub use error_stack::{self, Context, Report, ResultExt};
 pub use thiserror;
 
-use crate::{reportable};
+use crate::reportable;
 
 pub trait Display: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {}
 
@@ -36,9 +35,6 @@ pub struct Field<Id, S> {
     id: Id,
     status: S,
 }
-// TODO
-// field!(some_struct.property) -> "some_struct.property"
-// field!(%some_struct.property)
 
 impl<Id: Display, S: Display> std::fmt::Display for Field<Id, S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
