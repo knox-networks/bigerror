@@ -947,4 +947,14 @@ mod test {
 
         assert_err!(my_field);
     }
+
+    #[test]
+    fn expectation() {
+        let my_struct = MyStruct { my_field: None };
+        let my_field = my_struct
+            .my_field
+            .ok_or_else(|| InvalidInput::expected_actual("Some", "None"));
+
+        assert_err!(my_field);
+    }
 }

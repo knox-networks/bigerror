@@ -100,10 +100,44 @@ pub struct Expectation<E, A> {
     pub actual: A,
 }
 
+#[allow(dead_code)]
+enum Symbol {
+    Vertical,
+    VerticalRight,
+    Horizontal,
+    HorizontalLeft,
+    HorizontalDown,
+    ArrowRight,
+    CurveRight,
+    Space,
+}
+
+impl std::fmt::Display for Symbol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let utf8 = match self {
+            Self::Vertical => "\u{2502}",       // │
+            Self::VerticalRight => "\u{251c}",  // ├
+            Self::Horizontal => "\u{2500}",     // ─
+            Self::HorizontalLeft => "\u{2574}", // ╴
+            Self::HorizontalDown => "\u{252c}", // ┬
+            Self::ArrowRight => "\u{25b6}",     // ▶
+            Self::CurveRight => "\u{2570}",     // ╰
+            Self::Space => " ",
+        };
+        write!(f, "{}", utf8)
+    }
+}
+
 impl<E: Display, A: Display> std::fmt::Display for Expectation<E, A> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", KeyValue("expected", &self.expected))?;
-        writeln!(f, "{}", KeyValue("actual", &self.actual))
+        let cr = Symbol::CurveRight;
+        let hl = Symbol::HorizontalLeft;
+        write!(
+            f,
+            "{}\n{cr}{hl}{}",
+            KeyValue("expected", &self.expected),
+            KeyValue("actual", &self.actual)
+        )
     }
 }
 
