@@ -1,9 +1,9 @@
 use crate::{
     attachment::{self, DisplayDuration, Field, Unsupported},
-    AttachExt, Reportable,
+    AttachExt, Reportable, WithHeader,
 };
 
-use std::{path::Path, time::Duration};
+use std::{borrow::Cow, path::Path, time::Duration};
 use tracing::error;
 
 pub use error_stack::{self, Context, Report, ResultExt};
@@ -57,9 +57,53 @@ pub struct ConversionError;
 reportable!(ConversionError);
 
 #[derive(Debug, thiserror::Error)]
-#[error("InvalidInput")]
-pub struct InvalidInput;
-reportable!(InvalidInput);
+#[error("InvalidInput{0}")]
+pub struct InvalidInput(pub(crate) Header);
+
+// a context header
+#[derive(Debug, Default)]
+pub enum Header {
+    Slice(&'static str),
+    String(String),
+    #[default]
+    Empty,
+}
+
+impl From<String> for Header {
+    fn from(value: String) -> Self {
+        Self::String(value)
+    }
+}
+
+impl From<&'static str> for Header {
+    fn from(value: &'static str) -> Self {
+        Self::Slice(value)
+    }
+}
+
+impl std::fmt::Display for Header {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            Header::Slice(msg) => msg,
+            Header::String(s) => s.as_str(),
+            Header::Empty => return write!(f, ""),
+        };
+        // lead with a colon so that the parent context does not have to worry about optionality
+        write!(f, ": {msg}")
+    }
+}
+
+impl WithHeader for InvalidInput {
+    fn header(msg: impl Into<Header>) -> Self {
+        Self(msg.into())
+    }
+}
+
+impl Default for InvalidInput {
+    fn default() -> Self {
+        Self(Header::Empty)
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 #[error("InvalidStatus")]
@@ -114,18 +158,12 @@ impl InvalidInput {
     #[track_caller]
     pub fn with_path(path: impl AsRef<Path>) -> Report<Self> {
         let path = path.as_ref().display().to_string();
-        Report::new(Self).attach_kv("path", path)
-    }
-
-    #[track_caller]
-    pub fn type_name<T: ?Sized>() -> Report<Self> {
-        let type_name = std::any::type_name::<T>();
-        Report::new(Self).attach_printable(format!("type: {type_name}"))
+        Report::new(Self::default()).attach_kv("path", path)
     }
 
     #[track_caller]
     pub fn unsupported() -> Report<Self> {
-        Report::new(Self).attach_printable(Unsupported)
+        Self::attach(Unsupported)
     }
 }
 
