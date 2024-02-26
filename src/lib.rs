@@ -516,6 +516,23 @@ where
     }
 }
 
+pub trait ClearResult<T, E> {
+    #[allow(clippy::result_unit_err)]
+    fn clear_err(self) -> Result<T, ()>;
+
+    fn clear_ok(self) -> Result<(), E>;
+}
+
+impl<T, E> ClearResult<T, E> for Result<T, E> {
+    fn clear_err(self) -> Result<T, ()> {
+        self.map_err(|_| ())
+    }
+
+    fn clear_ok(self) -> Result<(), E> {
+        self.map(|_| ())
+    }
+}
+
 pub trait ToReport<T> {
     #[track_caller]
     fn to_report(self) -> Report<T>;
@@ -785,6 +802,46 @@ impl<T> OptionReport for Option<T> {
     }
 }
 
+#[macro_export]
+macro_rules! __field {
+    ($fn:path | &$body:ident . $($rest:tt)+) => {
+        $fn(&$body.$($rest)+, $crate::__field!(@[$body], .$($rest)+))
+    };
+    ($fn:path | $body:ident . $($rest:tt)+) => {
+        $fn($body.$($rest)+, $crate::__field!(@[$body], .$($rest)+))
+    };
+    // handle optional method calls: self.x.as_ref()
+    (@[$($pre:ident)+], . $field:ident $(.$method:ident())* ) => {
+        stringify!($field)
+    };
+    (@[$body:ident], $(.$method:ident())* ) => {
+        stringify!($body)
+    };
+
+    // much TTs
+    (@[$($pre:ident)+], . $field:ident . $($rest:tt)+) => {
+        $crate::__field!(@[$($pre)+ $field], $($rest)+)
+    };
+
+    // simple cases
+    ($fn:path | &$field:ident) => {
+        $fn(&$field, stringify!($field))
+    };
+    ($fn:path | $field:ident) => {
+        $fn($field, stringify!($field))
+    };
+}
+
+#[macro_export]
+macro_rules! expect_field {
+    ($($body:tt)+) => {
+        $crate::__field!(
+         $crate::OptionReport::ok_or_not_found_field |
+            $($body)+
+        )
+    };
+}
+
 #[cfg(test)]
 mod test {
 
@@ -803,6 +860,27 @@ mod test {
         Report(Report<MyError>),
     }
 
+    struct MyStruct {
+        my_field: Option<()>,
+    }
+
+    macro_rules! assert_err {
+        ($result:expr $(,)?) => {
+            assert!($result.is_err(), "{:?}", $result.unwrap());
+            if option_env!("PRINTERR").is_some() {
+                crate::init_colour();
+                println!("\n{:?}", $result.unwrap_err());
+            }
+        };
+        ($result:expr, $($arg:tt)+) => {
+            assert!($result.is_err(), $($arg)+);
+            if option_env!("PRINTERR").is_some() {
+                crate::init_colour();
+                println!("\n{:?}", $result.unwrap_err());
+            }
+        };
+    }
+
     from_report!({
 
         impl From<std::string::ParseError as ParseError>
@@ -818,7 +896,7 @@ mod test {
             "NaN".parse::<usize>().report_as()
         }
 
-        let _ = output().unwrap_err();
+        assert_err!(output());
     }
     #[test]
     fn reportable() {
@@ -826,7 +904,7 @@ mod test {
             "NaN".parse::<usize>().map_err(MyError::report)
         }
 
-        let _ = output().unwrap_err();
+        assert_err!(output());
     }
     #[test]
     fn box_reportable() {
@@ -834,10 +912,7 @@ mod test {
             Ok("NaN".parse::<usize>().map_err(Box::new)?)
         }
 
-        let _ = output()
-            .map_err(BoxError::from)
-            .change_context(MyError)
-            .unwrap_err();
+        assert_err!(output().map_err(BoxError::from).change_context(MyError));
     }
 
     #[test]
@@ -849,14 +924,11 @@ mod test {
                 .attach_printable(ParseError)
         }
 
-        let _ = output().change_context(MyError).unwrap_err();
+        assert_err!(output().change_context(MyError));
     }
 
     #[test]
-    #[should_panic]
     fn error_in_error_handling() {
-        crate::init_colour();
-
         fn output() -> Result<usize, Report<ConversionError>> {
             "NaN"
                 .parse::<usize>()
@@ -869,14 +941,14 @@ mod test {
                 })
         }
 
-        let _ = output().change_context(MyError).unwrap();
+        assert_err!(output().change_context(MyError));
     }
     #[test]
     fn option_report() {
-        assert!(None::<()>.ok_or_not_found().is_err());
+        assert_err!(None::<()>.ok_or_not_found());
 
         let id: u32 = 0xdeadbeef;
-        assert!(None::<bool>.ok_or_not_found_kv("id", id).is_err());
+        assert_err!(None::<bool>.ok_or_not_found_kv("id", id));
         assert!(Some(true).ok_or_not_found_kv("id", id).unwrap());
 
         struct OptionField<'a> {
@@ -884,7 +956,7 @@ mod test {
         }
 
         let field_none = OptionField { name: None };
-        assert!(field_none.name.ok_or_not_found_field("name").is_err());
+        assert_err!(field_none.name.ok_or_not_found_field("name"));
 
         let field_some = OptionField {
             name: Some("biggy"),
@@ -903,7 +975,7 @@ mod test {
                 .map_err(|e| ConversionError::from::<&str, usize>(e).into_ctx())
         }
 
-        let _ = output().unwrap_err();
+        assert_err!(output());
     }
 
     #[test]
@@ -915,11 +987,10 @@ mod test {
                 .into_ctx()
         }
 
-        assert!(output().is_err())
+        assert_err!(output());
     }
 
     #[test]
-    #[should_panic]
     fn with_type_status() {
         fn try_even(num: usize) -> Result<(), Report<MyError>> {
             if num % 2 != 0 {
@@ -928,6 +999,16 @@ mod test {
             Ok(())
         }
 
-        try_even(3).unwrap();
+        let my_input = try_even(3);
+        assert_err!(my_input);
+    }
+
+    #[test]
+    fn expect_field() {
+        let my_struct = MyStruct { my_field: None };
+
+        let my_field = expect_field!(my_struct.my_field.as_ref());
+
+        assert_err!(my_field);
     }
 }
