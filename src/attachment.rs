@@ -1,12 +1,12 @@
 use std::time::Duration;
 
-use error_stack::fmt::ColorMode;
+
 use tracing::error;
 
 pub use error_stack::{self, Context, Report, ResultExt};
 pub use thiserror;
 
-use crate::{context, reportable};
+use crate::{reportable};
 
 pub trait Display: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {}
 

@@ -1,10 +1,11 @@
-use std::path::Path;
-use std::time::Duration;
+use std::{path::Path, time::Duration};
 
 use error_stack::Context;
 
-use crate::attachment::{self, Unsupported};
-use crate::{ty, AttachExt, Report, Reportable};
+use crate::{
+    attachment::{self, Unsupported},
+    ty, AttachExt, Report, Reportable,
+};
 
 use crate::{attachment::DisplayDuration, reportable, Field};
 

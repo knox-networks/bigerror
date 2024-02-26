@@ -922,7 +922,7 @@ mod test {
         fn output() -> Result<usize, Report<MyError>> {
             "NaN"
                 .parse::<usize>()
-                .map_err(|e| ConversionError::from::<&str, usize>(e))
+                .map_err(ConversionError::from::<&str, usize>)
                 .into_ctx()
         }
 
