@@ -86,7 +86,7 @@ pub fn hms_string(duration: Duration) -> String {
 }
 
 // this is meant to explicitly indicate
-// that the underyling `A` is being
+// that the underlying `A` is being
 // used as an index key for getter methods
 // such as `HashMap` keys and `Vec` indices
 #[derive(Debug, thiserror::Error)]
