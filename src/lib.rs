@@ -689,20 +689,20 @@ impl<C> ToReport<C> for Report<C> {
 /// Used to produce [`NotFound`] reports from an [`Option`]
 pub trait OptionReport {
     type Some;
-    fn ok_or_not_found(self) -> Result<Self::Some, Report<NotFound>>;
-    fn ok_or_not_found_kv<K, V>(self, key: K, value: V) -> Result<Self::Some, Report<NotFound>>
+    fn expect_or(self) -> Result<Self::Some, Report<NotFound>>;
+    fn expect_kv<K, V>(self, key: K, value: V) -> Result<Self::Some, Report<NotFound>>
     where
         K: Display,
         V: Display;
-    fn ok_or_not_found_field(self, field: &'static str) -> Result<Self::Some, Report<NotFound>>;
-    fn ok_or_not_found_by<K: Display>(self, key: K) -> Result<Self::Some, Report<NotFound>>;
+    fn expect_field(self, field: &'static str) -> Result<Self::Some, Report<NotFound>>;
+    fn expect_by<K: Display>(self, key: K) -> Result<Self::Some, Report<NotFound>>;
 }
 
 impl<T> OptionReport for Option<T> {
     type Some = T;
 
     #[track_caller]
-    fn ok_or_not_found(self) -> Result<T, Report<NotFound>> {
+    fn expect_or(self) -> Result<T, Report<NotFound>> {
         // TODO #[track_caller] on closure
         // https://github.com/rust-lang/rust/issues/87417
         // self.ok_or_else(|| Report::new(NotFound))
@@ -713,7 +713,7 @@ impl<T> OptionReport for Option<T> {
     }
 
     #[track_caller]
-    fn ok_or_not_found_kv<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
+    fn expect_kv<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
     where
         K: Display,
         V: Display,
@@ -725,7 +725,7 @@ impl<T> OptionReport for Option<T> {
     }
 
     #[track_caller]
-    fn ok_or_not_found_field(self, field: &'static str) -> Result<T, Report<NotFound>> {
+    fn expect_field(self, field: &'static str) -> Result<T, Report<NotFound>> {
         match self {
             Some(v) => Ok(v),
             None => Err(NotFound::with_field(field)),
@@ -733,7 +733,7 @@ impl<T> OptionReport for Option<T> {
     }
 
     #[track_caller]
-    fn ok_or_not_found_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
+    fn expect_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
         match self {
             Some(v) => Ok(v),
             None => Err(NotFound::with_kv(Index(key), attachment::Type::of::<K>())),
@@ -775,7 +775,7 @@ macro_rules! __field {
 macro_rules! expect_field {
     ($($body:tt)+) => {
         $crate::__field!(
-         $crate::OptionReport::ok_or_not_found_field |
+         $crate::OptionReport::expect_field |
             $($body)+
         )
     };
@@ -884,26 +884,23 @@ mod test {
     }
     #[test]
     fn option_report() {
-        assert_err!(None::<()>.ok_or_not_found());
+        assert_err!(None::<()>.expect_or());
 
         let id: u32 = 0xdeadbeef;
-        assert_err!(None::<bool>.ok_or_not_found_kv("id", id));
-        assert!(Some(true).ok_or_not_found_kv("id", id).unwrap());
+        assert_err!(None::<bool>.expect_kv("id", id));
+        assert!(Some(true).expect_kv("id", id).unwrap());
 
         struct OptionField<'a> {
             name: Option<&'a str>,
         }
 
         let field_none = OptionField { name: None };
-        assert_err!(field_none.name.ok_or_not_found_field("name"));
+        assert_err!(field_none.name.expect_field("name"));
 
         let field_some = OptionField {
             name: Some("biggy"),
         };
-        assert_eq!(
-            "biggy",
-            field_some.name.ok_or_not_found_field("name").unwrap()
-        );
+        assert_eq!("biggy", field_some.name.expect_field("name").unwrap());
     }
 
     #[test]
