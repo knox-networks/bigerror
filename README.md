@@ -22,6 +22,8 @@ output:
 
 ## extra
 
+If [`just`](https://just.systems/) is installed: `just printerr-all` to visualize all unit test errors
+
 ```sql
 -- This error crate is intended to
 -- enhance error-stack:
