@@ -51,10 +51,7 @@ where
     where
         K: Debug,
         V: Debug;
-    fn with_field_status<K, S>(key: K, status: S) -> Report<Self>
-    where
-        K: Display,
-        S: Display;
+    fn with_field_status<S: Display>(key: &'static str, status: S) -> Report<Self>;
 
     fn value() -> Self;
 
@@ -130,6 +127,13 @@ impl<C: Context> IntoContext for Report<C> {
 
 pub trait ResultIntoContext: ResultExt {
     fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
+    // pub fn and_then<U, F>(self, op: F) -> Result<U, E>
+    // where
+    // F: FnOnce(T) -> Result<U, E>,
+    fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    where
+        C2: Reportable,
+        F: FnOnce(Self::Ok) -> Result<U, Self::Context>;
 }
 
 impl<T, C> ResultIntoContext for Result<T, Report<C>>
@@ -140,6 +144,17 @@ where
     #[track_caller]
     fn into_ctx<C2: Reportable>(self) -> Result<T, Report<C2>> {
         self.change_context(C2::value())
+    }
+
+    fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    where
+        C2: Reportable,
+        F: FnOnce(<Self as ResultExt>::Ok) -> Result<U, C>,
+    {
+        match self {
+            Ok(t) => op(t).change_context(C2::value()),
+            Err(ctx) => Err(ctx.into_ctx()),
+        }
     }
 }
 
@@ -188,9 +203,8 @@ macro_rules! reportable {
                 $crate::Report::new(Self).attach_kv_dbg(key, value)
             }
             #[track_caller]
-            fn with_field_status<K, S>(key: K, status: S) -> $crate::Report<Self>
+            fn with_field_status<S>(key: &'static str, status: S) -> $crate::Report<Self>
             where
-                K: $crate::attachment::Display,
                 S: $crate::attachment::Display,
             {
                 $crate::Report::new(Self)
@@ -742,24 +756,39 @@ impl<T> OptionReport for Option<T> {
 }
 
 #[macro_export]
-macro_rules! __field {
-    ($fn:path | &$body:ident . $($rest:tt)+) => {
-        $fn(&$body.$($rest)+, $crate::__field!(@[$body], .$($rest)+))
+macro_rules! __strip {
+    // much TTs
+    (@[$($pre:ident)+], $field:ident . $($rest:tt)+) => {
+        $crate::__field!(@[$($pre)+ $field], $($rest)+)
     };
-    ($fn:path | $body:ident . $($rest:tt)+) => {
-        $fn($body.$($rest)+, $crate::__field!(@[$body], .$($rest)+))
+}
+
+#[macro_export]
+macro_rules! __field {
+    // === exits ===
+    // handle optional method calls: self.x.as_ref()
+    ($fn:path, @[$($pre:expr)+], % $field_method:ident() $(.$method:ident())* ) => {
+        $fn($($pre.)+ $field_method() $(.$method())*, stringify!($field_method))
     };
     // handle optional method calls: self.x.as_ref()
-    (@[$($pre:ident)+], . $field:ident $(.$method:ident())* ) => {
-        stringify!($field)
+    ($fn:path, @[$($pre:expr)+], $field:ident $(.$method:ident())* ) => {
+        $fn($($pre.)+ $field $(.$method())*, stringify!($field))
     };
-    (@[$body:ident], $(.$method:ident())* ) => {
-        stringify!($body)
+    ($fn:path, @[$body:expr], $(.$method:ident())* ) => {
+        $fn($body$(.$method())*, stringify!($body))
     };
 
-    // much TTs
-    (@[$($pre:ident)+], . $field:ident . $($rest:tt)+) => {
-        $crate::__field!(@[$($pre)+ $field], $($rest)+)
+    // === much TTs ===
+    ($fn:path, @[$($pre:expr)+], $field:ident . $($rest:tt)+) => {
+        $crate::__field!($fn, @[$($pre)+ $field], $($rest)+)
+    };
+
+    // === entries ===
+    ($fn:path | &$body:ident . $($rest:tt)+) => {
+        $crate::__field!($fn, @[&$body], $($rest)+)
+    };
+    ($fn:path | $body:ident . $($rest:tt)+) => {
+        $crate::__field!($fn, @[$body], $($rest)+)
     };
 
     // simple cases
@@ -801,6 +830,12 @@ mod test {
 
     struct MyStruct {
         my_field: Option<()>,
+    }
+
+    impl MyStruct {
+        fn my_field(&self) -> Option<()> {
+            self.my_field
+        }
     }
 
     macro_rules! assert_err {
@@ -944,7 +979,11 @@ mod test {
         let my_struct = MyStruct { my_field: None };
 
         let my_field = expect_field!(my_struct.my_field.as_ref());
-
+        assert_err!(my_field);
+        let my_field = expect_field!(&my_struct.my_field);
+        assert_err!(my_field);
+        // from field method
+        let my_field = expect_field!(my_struct.%my_field());
         assert_err!(my_field);
     }
 
