@@ -133,7 +133,7 @@ pub trait ResultIntoContext: ResultExt {
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
-        F: FnOnce(Self::Ok) -> Result<U, Self::Context>;
+        F: FnOnce(Self::Ok) -> Result<U, Report<C2>>;
 }
 
 impl<T, C> ResultIntoContext for Result<T, Report<C>>
@@ -149,10 +149,10 @@ where
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
-        F: FnOnce(<Self as ResultExt>::Ok) -> Result<U, C>,
+        F: FnOnce(T) -> Result<U, Report<C2>>,
     {
         match self {
-            Ok(t) => op(t).change_context(C2::value()),
+            Ok(t) => op(t),
             Err(ctx) => Err(ctx.into_ctx()),
         }
     }
