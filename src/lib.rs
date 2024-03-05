@@ -2,7 +2,7 @@ use error_stack::fmt::ColorMode;
 use std::fmt;
 use tracing::{debug, error, info, trace, warn, Level};
 
-pub use error_stack::{self, bail, Context, Report, ResultExt};
+pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
 pub use thiserror;
 
 pub mod attachment;
@@ -127,13 +127,14 @@ impl<C: Context> IntoContext for Report<C> {
 
 pub trait ResultIntoContext: ResultExt {
     fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
-    // pub fn and_then<U, F>(self, op: F) -> Result<U, E>
-    // where
-    // F: FnOnce(T) -> Result<U, E>,
-    fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    fn then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
         F: FnOnce(Self::Ok) -> Result<U, Report<C2>>;
+    fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    where
+        C2: Reportable,
+        F: FnOnce(Self::Ok) -> U;
 }
 
 impl<T, C> ResultIntoContext for Result<T, Report<C>>
@@ -146,14 +147,29 @@ where
         self.change_context(C2::value())
     }
 
-    fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    #[inline]
+    #[track_caller]
+    fn then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
         F: FnOnce(T) -> Result<U, Report<C2>>,
     {
         match self {
             Ok(t) => op(t),
-            Err(ctx) => Err(ctx.into_ctx()),
+            Err(ctx) => Err(ctx.change_context(C2::value())),
+        }
+    }
+
+    #[inline]
+    #[track_caller]
+    fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    where
+        C2: Reportable,
+        F: FnOnce(T) -> U,
+    {
+        match self {
+            Ok(t) => Ok(op(t)),
+            Err(ctx) => Err(ctx.change_context(C2::value())),
         }
     }
 }
@@ -840,17 +856,19 @@ mod test {
 
     macro_rules! assert_err {
         ($result:expr $(,)?) => {
-            assert!($result.is_err(), "{:?}", $result.unwrap());
+            let result = $result;
+            assert!(result.is_err(), "{:?}", result.unwrap());
             if option_env!("PRINTERR").is_some() {
                 crate::init_colour();
-                println!("\n{:?}", $result.unwrap_err());
+                println!("\n{:?}", result.unwrap_err());
             }
         };
         ($result:expr, $($arg:tt)+) => {
-            assert!($result.is_err(), $($arg)+);
+            let result = $result;
+            assert!(result.is_err(), $($arg)+);
             if option_env!("PRINTERR").is_some() {
                 crate::init_colour();
-                println!("\n{:?}", $result.unwrap_err());
+                println!("\n{:?}", result.unwrap_err());
             }
         };
     }

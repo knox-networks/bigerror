@@ -8,6 +8,10 @@ fmt:
     rustup run nightly cargo fmt -- \
       --config-path ./fmt/rustfmt.toml
 
+fix *args: && fmt-rs
+  cd {{invocation_directory()}}; cargo clippy --fix --all-targets --all-features {{args}}
+
+
 # Prints the error stack for a given test to stdout
 printerr test $PRINTERR="true":
   @cargo test --quiet --lib -- --exact {{test}} --nocapture
