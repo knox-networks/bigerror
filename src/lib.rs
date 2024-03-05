@@ -62,7 +62,7 @@ where
 
     #[track_caller]
     fn with_variant<A: Display>(value: A) -> Report<Self> {
-        Self::with_kv_dbg(attachment::Type::of::<A>(), value)
+        Self::with_kv(attachment::Type::of::<A>(), value)
     }
 
     #[track_caller]

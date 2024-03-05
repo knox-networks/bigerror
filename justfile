@@ -8,7 +8,7 @@ fmt:
     rustup run nightly cargo fmt -- \
       --config-path ./fmt/rustfmt.toml
 
-fix *args: && fmt-rs
+fix *args: && fmt
   cd {{invocation_directory()}}; cargo clippy --fix --all-targets --all-features {{args}}
 
 
