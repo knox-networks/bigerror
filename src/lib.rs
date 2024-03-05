@@ -772,14 +772,6 @@ impl<T> OptionReport for Option<T> {
 }
 
 #[macro_export]
-macro_rules! __strip {
-    // much TTs
-    (@[$($pre:ident)+], $field:ident . $($rest:tt)+) => {
-        $crate::__field!(@[$($pre)+ $field], $($rest)+)
-    };
-}
-
-#[macro_export]
 macro_rules! __field {
     // === exits ===
     // handle optional method calls: self.x.as_ref()
