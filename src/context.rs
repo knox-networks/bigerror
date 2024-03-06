@@ -39,6 +39,7 @@ reportable!(DecodeError);
 pub struct EncodeError;
 reportable!(EncodeError);
 
+/// Emitted during an authorization/verification check
 #[derive(Debug, thiserror::Error)]
 #[error("AuthError")]
 pub struct AuthError;
@@ -66,11 +67,13 @@ reportable!(NotFound);
 pub struct DbError;
 reportable!(DbError);
 
+/// An error that is related to filesystem operations such as those in [`std::fs`]
 #[derive(Debug, thiserror::Error)]
 #[error("FsError")]
 pub struct FsError;
 reportable!(FsError);
 
+/// Emitted during the startup/provisioning phase of a program
 #[derive(Debug, thiserror::Error)]
 #[error("SetupError")]
 pub struct SetupError;
