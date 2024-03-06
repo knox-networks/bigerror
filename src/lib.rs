@@ -1005,7 +1005,7 @@ mod test {
     // this is meant to be a complie time test of the `__field!` macro
     fn __field() {
         let my_struct = MyStruct::default();
-        let _out: () = __field!(MyStruct::__field::<&str> | &my_struct._string);
+        __field!(MyStruct::__field::<&str> | &my_struct._string);
     }
 
     #[test]
