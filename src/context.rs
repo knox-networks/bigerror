@@ -18,12 +18,22 @@ pub struct BoxError(Box<dyn std::error::Error + 'static + Send + Sync>);
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
 pub struct BoxCoreError(Box<dyn CoreError>);
-
 #[derive(Debug, thiserror::Error)]
 #[error("DecodeError")]
+/// Represents errors emitted during while processing bytes into an object.
+/// * byte types can can be represented by objects such as `&[u8]`, `bytes::Bytes`, and `Vec<u8>`
+/// * used by codecs/serializers/deserializers
+///   * used by codecs/serializers/deserializers
+///
+///  here's an example of types/traits that can emit encode/decode errors:
+///  * https://docs.rs/tonic/latest/tonic/codec/trait.Encoder.html
+///  * https://docs.rs/rkyv/latest/rkyv/ser/serializers/type.AllocSerializer.html
+///  * https://docs.rs/serde/latest/serde/trait.Serializer.html
 pub struct DecodeError;
 reportable!(DecodeError);
 
+/// Represents errors emitted during while turning an object into bytes.
+/// See [`DecodeError`] for more details.
 #[derive(Debug, thiserror::Error)]
 #[error("EncodeError")]
 pub struct EncodeError;
@@ -39,6 +49,8 @@ reportable!(AuthError);
 pub struct NetworkError;
 reportable!(NetworkError);
 
+/// Emitted while processing a string (UTF-8 or otherwise).
+/// Usually associated with the [`std::str::FromStr`] trait and the `.parse::<SomeT>()` method
 #[derive(Debug, thiserror::Error)]
 #[error("ParseError")]
 pub struct ParseError;
@@ -64,6 +76,8 @@ reportable!(FsError);
 pub struct SetupError;
 reportable!(SetupError);
 
+/// Emitted when casting existing [non scalar](https://en.wikipedia.org/w/index.php?title=Scalar_processor&useskin=vector#Scalar_data_type)
+/// objects (such as structs, enums, and unions) into each other.
 #[derive(Debug, thiserror::Error)]
 #[error("ConversionError")]
 pub struct ConversionError;
