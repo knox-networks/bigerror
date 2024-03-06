@@ -32,7 +32,7 @@ pub struct BoxCoreError(Box<dyn CoreError>);
 pub struct DecodeError;
 reportable!(DecodeError);
 
-/// Represents errors emitted during while turning an object into bytes.
+/// Emitted while turning an object into bytes.
 /// See [`DecodeError`] for more details.
 #[derive(Debug, thiserror::Error)]
 #[error("EncodeError")]
@@ -76,8 +76,8 @@ reportable!(FsError);
 pub struct SetupError;
 reportable!(SetupError);
 
-/// Emitted when casting existing [non scalar](https://en.wikipedia.org/w/index.php?title=Scalar_processor&useskin=vector#Scalar_data_type)
-/// objects (such as structs, enums, and unions) into each other.
+/// Emitted during transformations between [non scalar](https://en.wikipedia.org/w/index.php?title=Scalar_processor&useskin=vector#Scalar_data_type)
+/// objects (such as structs, enums, and unions).
 #[derive(Debug, thiserror::Error)]
 #[error("ConversionError")]
 pub struct ConversionError;
