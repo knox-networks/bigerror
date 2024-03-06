@@ -100,6 +100,9 @@ pub struct Expectation<E, A> {
     pub actual: A,
 }
 
+#[derive(Debug, thiserror::Error)]
+pub struct FromTo<F, T>(pub F, pub T);
+
 #[allow(dead_code)]
 enum Symbol {
     Vertical,
@@ -138,6 +141,15 @@ impl<E: Display, A: Display> std::fmt::Display for Expectation<E, A> {
             KeyValue("expected", &self.expected),
             KeyValue("actual", &self.actual)
         )
+    }
+}
+impl<F: Display, T: Display> std::fmt::Display for FromTo<F, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let cr = Symbol::CurveRight;
+        let hl = Symbol::HorizontalLeft;
+        let from = KeyValue("from", &self.0);
+        let to = KeyValue("to", &self.1);
+        write!(f, "{from}\n{cr}{hl}{to}",)
     }
 }
 

@@ -87,6 +87,7 @@ pub trait ReportAs<T> {
 }
 
 impl<T, E: Context> ReportAs<T> for Result<T, E> {
+    #[inline]
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
         // TODO #[track_caller] on closure
@@ -100,6 +101,7 @@ impl<T, E: Context> ReportAs<T> for Result<T, E> {
 }
 
 impl<T> ReportAs<T> for &'static str {
+    #[inline]
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
         Err(Report::new(C::value()).attach_printable(self))
@@ -107,6 +109,7 @@ impl<T> ReportAs<T> for &'static str {
 }
 
 impl<T> ReportAs<T> for String {
+    #[inline]
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
         Err(Report::new(C::value()).attach_printable(self))
@@ -127,12 +130,12 @@ impl<C: Context> IntoContext for Report<C> {
 
 pub trait ResultIntoContext: ResultExt {
     fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
-    // Resut::and_then
-    fn then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    // Result::and_then
+    fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
         F: FnOnce(Self::Ok) -> Result<U, Report<C2>>;
-    // Resut::map
+    // Result::map
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
@@ -151,7 +154,7 @@ where
 
     #[inline]
     #[track_caller]
-    fn then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
         F: FnOnce(T) -> Result<U, Report<C2>>,
@@ -255,6 +258,7 @@ pub trait AttachExt {
 }
 
 impl<C> AttachExt for Report<C> {
+    #[inline]
     #[track_caller]
     fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
@@ -264,6 +268,7 @@ impl<C> AttachExt for Report<C> {
         self.attach_printable(KeyValue(key, value))
     }
 
+    #[inline]
     #[track_caller]
     fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Self
     where
@@ -282,6 +287,7 @@ impl<C> AttachExt for Report<C> {
         self.attach_printable(Field::new(name, status))
     }
 
+    #[inline]
     #[track_caller]
     fn attach_dbg<A>(self, value: A) -> Self
     where
@@ -292,6 +298,7 @@ impl<C> AttachExt for Report<C> {
 }
 
 impl<T, C> AttachExt for Result<T, Report<C>> {
+    #[inline]
     #[track_caller]
     fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
@@ -1002,7 +1009,7 @@ mod test {
         assert_err!(my_field);
     }
 
-    // this is meant to be a complie time test of the `__field!` macro
+    // this is meant to be a compile time test of the `__field!` macro
     fn __field() {
         let my_struct = MyStruct::default();
         __field!(MyStruct::__field::<&str> | &my_struct._string);

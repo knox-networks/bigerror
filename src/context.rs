@@ -3,7 +3,7 @@ use std::{path::Path, time::Duration};
 use error_stack::Context;
 
 use crate::{
-    attachment::{self, Unsupported},
+    attachment::{self, FromTo, Unsupported},
     ty, AttachExt, Report, Reportable,
 };
 
@@ -18,6 +18,21 @@ pub struct BoxError(Box<dyn std::error::Error + 'static + Send + Sync>);
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
 pub struct BoxCoreError(Box<dyn CoreError>);
+
+#[derive(Debug, thiserror::Error)]
+#[error("DecodeError")]
+pub struct DecodeError;
+reportable!(DecodeError);
+
+#[derive(Debug, thiserror::Error)]
+#[error("EncodeError")]
+pub struct EncodeError;
+reportable!(EncodeError);
+
+#[derive(Debug, thiserror::Error)]
+#[error("AuthError")]
+pub struct AuthError;
+reportable!(AuthError);
 
 #[derive(Debug, thiserror::Error)]
 #[error("NetworkError")]
@@ -63,6 +78,11 @@ reportable!(InvalidInput);
 #[error("InvalidStatus")]
 pub struct InvalidStatus;
 reportable!(InvalidStatus);
+
+#[derive(Debug, thiserror::Error)]
+#[error("InvalidState")]
+pub struct InvalidState;
+reportable!(InvalidState);
 
 #[derive(Debug, thiserror::Error)]
 #[error("ConfigError")]
@@ -130,31 +150,24 @@ impl InvalidInput {
 impl ConversionError {
     #[track_caller]
     pub fn new<F, T>() -> Report<Self> {
-        Report::new(Self)
-            .attach_printable(format!("from: {}", ty!(F)))
-            .attach_printable(format!("to: {}", ty!(T)))
+        Report::new(Self).attach_printable(FromTo(ty!(F), ty!(T)))
     }
-
     #[track_caller]
     pub fn from<F, T>(ctx: impl Context) -> Report<Self> {
-        Self::report(ctx)
-            .attach_printable(format!("from: {}", ty!(F)))
-            .attach_printable(format!("to: {}", ty!(T)))
+        Self::report(ctx).attach_printable(FromTo(ty!(F), ty!(T)))
     }
 }
 
 impl NotFound {
     #[track_caller]
-    pub fn with_field(field: &'static str) -> Report<Self>
-where {
+    pub fn with_field(field: &'static str) -> Report<Self> {
         Report::new(Self).attach_printable(Field::new(field, attachment::Missing))
     }
 }
 
 impl ParseError {
     #[track_caller]
-    pub fn with_field(field: &'static str) -> Report<Self>
-where {
+    pub fn with_field(field: &'static str) -> Report<Self> {
         Report::new(Self).attach_printable(Field::new(field, attachment::Invalid))
     }
 }

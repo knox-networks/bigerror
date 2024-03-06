@@ -37,7 +37,7 @@ filter_unconventional = false
 split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
-  { pattern = "\\(#([0-9]+)\\)", replace = "[#${1}](https://github.com/knox-networks/bigerror/pull/${1})"}
+  { pattern = "\\(#([0-9]+)\\)", replace = "[#${1}](https://github.com/knox-networks/bigerror/pull/${1})" },
   # { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/orhun/git-cliff/issues/${2}))"}, # replace issue numbers
 ]
 # protect breaking changes from being skipped due to matching a skipping commit_parser
