@@ -127,10 +127,12 @@ impl<C: Context> IntoContext for Report<C> {
 
 pub trait ResultIntoContext: ResultExt {
     fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
+    // Resut::and_then
     fn then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
         F: FnOnce(Self::Ok) -> Result<U, Report<C2>>;
+    // Resut::map
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
         C2: Reportable,
@@ -775,28 +777,28 @@ impl<T> OptionReport for Option<T> {
 macro_rules! __field {
     // === exits ===
     // handle optional method calls: self.x.as_ref()
-    ($fn:path, @[$($pre:expr)+], % $field_method:ident() $(.$method:ident())* ) => {
-        $fn($($pre.)+ $field_method() $(.$method())*, stringify!($field_method))
+    ($fn:path, @[$($rf:tt)*] @[$($pre:expr)+], % $field_method:ident() $(.$method:ident())* ) => {
+        $fn($($rf)*$($pre.)+ $field_method() $(.$method())*, stringify!($field_method))
     };
     // handle optional method calls: self.x.as_ref()
-    ($fn:path, @[$($pre:expr)+], $field:ident $(.$method:ident())* ) => {
-        $fn($($pre.)+ $field $(.$method())*, stringify!($field))
+    ($fn:path, @[$($rf:tt)*] @[$($pre:expr)+], $field:ident $(.$method:ident())* ) => {
+        $fn($($rf)*$($pre.)+ $field $(.$method())*, stringify!($field))
     };
-    ($fn:path, @[$body:expr], $(.$method:ident())* ) => {
-        $fn($body$(.$method())*, stringify!($body))
+    ($fn:path, @[$($rf:tt)*] @[$body:expr], $(.$method:ident())* ) => {
+        $fn($($rf)*$body$(.$method())*, stringify!($body))
     };
 
     // === much TTs ===
-    ($fn:path, @[$($pre:expr)+], $field:ident . $($rest:tt)+) => {
-        $crate::__field!($fn, @[$($pre)+ $field], $($rest)+)
+    ($fn:path, @[$($rf:tt)*] @[$($pre:expr)+], $field:ident . $($rest:tt)+) => {
+        $crate::__field!($fn, $($rf:tt)* @[$($pre)+ $field], $($rest)+)
     };
 
     // === entries ===
     ($fn:path | &$body:ident . $($rest:tt)+) => {
-        $crate::__field!($fn, @[&$body], $($rest)+)
+        $crate::__field!($fn, @[&] @[$body], $($rest)+)
     };
     ($fn:path | $body:ident . $($rest:tt)+) => {
-        $crate::__field!($fn, @[$body], $($rest)+)
+        $crate::__field!($fn, @[] @[$body], $($rest)+)
     };
 
     // simple cases
@@ -836,11 +838,14 @@ mod test {
         Report(Report<MyError>),
     }
 
+    #[derive(Default)]
     struct MyStruct {
         my_field: Option<()>,
+        _string: String,
     }
 
     impl MyStruct {
+        fn __field<T>(_t: T, _field: &'static str) {}
         fn my_field(&self) -> Option<()> {
             self.my_field
         }
@@ -986,20 +991,26 @@ mod test {
 
     #[test]
     fn expect_field() {
-        let my_struct = MyStruct { my_field: None };
+        let my_struct = MyStruct::default();
 
         let my_field = expect_field!(my_struct.my_field.as_ref());
         assert_err!(my_field);
-        let my_field = expect_field!(&my_struct.my_field);
+        let my_field = expect_field!(my_struct.my_field);
         assert_err!(my_field);
         // from field method
         let my_field = expect_field!(my_struct.%my_field());
         assert_err!(my_field);
     }
 
+    // this is meant to be a complie time test of the `__field!` macro
+    fn __field() {
+        let my_struct = MyStruct::default();
+        let _out: () = __field!(MyStruct::__field::<&str> | &my_struct._string);
+    }
+
     #[test]
     fn expectation() {
-        let my_struct = MyStruct { my_field: None };
+        let my_struct = MyStruct::default();
         let my_field = my_struct
             .my_field
             .ok_or_else(|| InvalidInput::expected_actual("Some", "None"));
