@@ -2,7 +2,7 @@ use error_stack::fmt::ColorMode;
 use std::fmt;
 use tracing::{debug, error, info, trace, warn, Level};
 
-pub use error_stack::{self, bail, Context, Report, ResultExt};
+pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
 pub use thiserror;
 
 pub mod attachment;
@@ -51,10 +51,7 @@ where
     where
         K: Debug,
         V: Debug;
-    fn with_field_status<K, S>(key: K, status: S) -> Report<Self>
-    where
-        K: Display,
-        S: Display;
+    fn with_field_status<S: Display>(key: &'static str, status: S) -> Report<Self>;
 
     fn value() -> Self;
 
@@ -65,7 +62,7 @@ where
 
     #[track_caller]
     fn with_variant<A: Display>(value: A) -> Report<Self> {
-        Self::with_kv_dbg(attachment::Type::of::<A>(), value)
+        Self::with_kv(attachment::Type::of::<A>(), value)
     }
 
     #[track_caller]
@@ -90,6 +87,7 @@ pub trait ReportAs<T> {
 }
 
 impl<T, E: Context> ReportAs<T> for Result<T, E> {
+    #[inline]
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
         // TODO #[track_caller] on closure
@@ -103,6 +101,7 @@ impl<T, E: Context> ReportAs<T> for Result<T, E> {
 }
 
 impl<T> ReportAs<T> for &'static str {
+    #[inline]
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
         Err(Report::new(C::value()).attach_printable(self))
@@ -110,6 +109,7 @@ impl<T> ReportAs<T> for &'static str {
 }
 
 impl<T> ReportAs<T> for String {
+    #[inline]
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
         Err(Report::new(C::value()).attach_printable(self))
@@ -130,6 +130,16 @@ impl<C: Context> IntoContext for Report<C> {
 
 pub trait ResultIntoContext: ResultExt {
     fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
+    // Result::and_then
+    fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    where
+        C2: Reportable,
+        F: FnOnce(Self::Ok) -> Result<U, Report<C2>>;
+    // Result::map
+    fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    where
+        C2: Reportable,
+        F: FnOnce(Self::Ok) -> U;
 }
 
 impl<T, C> ResultIntoContext for Result<T, Report<C>>
@@ -140,6 +150,32 @@ where
     #[track_caller]
     fn into_ctx<C2: Reportable>(self) -> Result<T, Report<C2>> {
         self.change_context(C2::value())
+    }
+
+    #[inline]
+    #[track_caller]
+    fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    where
+        C2: Reportable,
+        F: FnOnce(T) -> Result<U, Report<C2>>,
+    {
+        match self {
+            Ok(t) => op(t),
+            Err(ctx) => Err(ctx.change_context(C2::value())),
+        }
+    }
+
+    #[inline]
+    #[track_caller]
+    fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
+    where
+        C2: Reportable,
+        F: FnOnce(T) -> U,
+    {
+        match self {
+            Ok(t) => Ok(op(t)),
+            Err(ctx) => Err(ctx.change_context(C2::value())),
+        }
     }
 }
 
@@ -188,9 +224,8 @@ macro_rules! reportable {
                 $crate::Report::new(Self).attach_kv_dbg(key, value)
             }
             #[track_caller]
-            fn with_field_status<K, S>(key: K, status: S) -> $crate::Report<Self>
+            fn with_field_status<S>(key: &'static str, status: S) -> $crate::Report<Self>
             where
-                K: $crate::attachment::Display,
                 S: $crate::attachment::Display,
             {
                 $crate::Report::new(Self)
@@ -223,6 +258,7 @@ pub trait AttachExt {
 }
 
 impl<C> AttachExt for Report<C> {
+    #[inline]
     #[track_caller]
     fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
@@ -232,6 +268,7 @@ impl<C> AttachExt for Report<C> {
         self.attach_printable(KeyValue(key, value))
     }
 
+    #[inline]
     #[track_caller]
     fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Self
     where
@@ -250,6 +287,7 @@ impl<C> AttachExt for Report<C> {
         self.attach_printable(Field::new(name, status))
     }
 
+    #[inline]
     #[track_caller]
     fn attach_dbg<A>(self, value: A) -> Self
     where
@@ -260,6 +298,7 @@ impl<C> AttachExt for Report<C> {
 }
 
 impl<T, C> AttachExt for Result<T, Report<C>> {
+    #[inline]
     #[track_caller]
     fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
@@ -743,23 +782,30 @@ impl<T> OptionReport for Option<T> {
 
 #[macro_export]
 macro_rules! __field {
-    ($fn:path | &$body:ident . $($rest:tt)+) => {
-        $fn(&$body.$($rest)+, $crate::__field!(@[$body], .$($rest)+))
-    };
-    ($fn:path | $body:ident . $($rest:tt)+) => {
-        $fn($body.$($rest)+, $crate::__field!(@[$body], .$($rest)+))
+    // === exits ===
+    // handle optional method calls: self.x.as_ref()
+    ($fn:path, @[$($rf:tt)*] @[$($pre:expr)+], % $field_method:ident() $(.$method:ident())* ) => {
+        $fn($($rf)*$($pre.)+ $field_method() $(.$method())*, stringify!($field_method))
     };
     // handle optional method calls: self.x.as_ref()
-    (@[$($pre:ident)+], . $field:ident $(.$method:ident())* ) => {
-        stringify!($field)
+    ($fn:path, @[$($rf:tt)*] @[$($pre:expr)+], $field:ident $(.$method:ident())* ) => {
+        $fn($($rf)*$($pre.)+ $field $(.$method())*, stringify!($field))
     };
-    (@[$body:ident], $(.$method:ident())* ) => {
-        stringify!($body)
+    ($fn:path, @[$($rf:tt)*] @[$body:expr], $(.$method:ident())* ) => {
+        $fn($($rf)*$body$(.$method())*, stringify!($body))
     };
 
-    // much TTs
-    (@[$($pre:ident)+], . $field:ident . $($rest:tt)+) => {
-        $crate::__field!(@[$($pre)+ $field], $($rest)+)
+    // === much TTs ===
+    ($fn:path, @[$($rf:tt)*] @[$($pre:expr)+], $field:ident . $($rest:tt)+) => {
+        $crate::__field!($fn, $($rf:tt)* @[$($pre)+ $field], $($rest)+)
+    };
+
+    // === entries ===
+    ($fn:path | &$body:ident . $($rest:tt)+) => {
+        $crate::__field!($fn, @[&] @[$body], $($rest)+)
+    };
+    ($fn:path | $body:ident . $($rest:tt)+) => {
+        $crate::__field!($fn, @[] @[$body], $($rest)+)
     };
 
     // simple cases
@@ -799,23 +845,34 @@ mod test {
         Report(Report<MyError>),
     }
 
+    #[derive(Default)]
     struct MyStruct {
         my_field: Option<()>,
+        _string: String,
+    }
+
+    impl MyStruct {
+        fn __field<T>(_t: T, _field: &'static str) {}
+        fn my_field(&self) -> Option<()> {
+            self.my_field
+        }
     }
 
     macro_rules! assert_err {
         ($result:expr $(,)?) => {
-            assert!($result.is_err(), "{:?}", $result.unwrap());
+            let result = $result;
+            assert!(result.is_err(), "{:?}", result.unwrap());
             if option_env!("PRINTERR").is_some() {
                 crate::init_colour();
-                println!("\n{:?}", $result.unwrap_err());
+                println!("\n{:?}", result.unwrap_err());
             }
         };
         ($result:expr, $($arg:tt)+) => {
-            assert!($result.is_err(), $($arg)+);
+            let result = $result;
+            assert!(result.is_err(), $($arg)+);
             if option_env!("PRINTERR").is_some() {
                 crate::init_colour();
-                println!("\n{:?}", $result.unwrap_err());
+                println!("\n{:?}", result.unwrap_err());
             }
         };
     }
@@ -941,16 +998,26 @@ mod test {
 
     #[test]
     fn expect_field() {
-        let my_struct = MyStruct { my_field: None };
+        let my_struct = MyStruct::default();
 
         let my_field = expect_field!(my_struct.my_field.as_ref());
-
         assert_err!(my_field);
+        let my_field = expect_field!(my_struct.my_field);
+        assert_err!(my_field);
+        // from field method
+        let my_field = expect_field!(my_struct.%my_field());
+        assert_err!(my_field);
+    }
+
+    // this is meant to be a compile time test of the `__field!` macro
+    fn __field() {
+        let my_struct = MyStruct::default();
+        __field!(MyStruct::__field::<&str> | &my_struct._string);
     }
 
     #[test]
     fn expectation() {
-        let my_struct = MyStruct { my_field: None };
+        let my_struct = MyStruct::default();
         let my_field = my_struct
             .my_field
             .ok_or_else(|| InvalidInput::expected_actual("Some", "None"));

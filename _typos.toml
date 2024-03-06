@@ -1,0 +1,6 @@
+# typos config
+# https://github.com/crate-ci/typos/blob/master/docs/reference.md
+
+[default]
+# mergify regex
+extend-ignore-re = ["~=\\S+"]
