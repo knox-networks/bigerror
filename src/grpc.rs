@@ -28,6 +28,51 @@ where
     }
 }
 
+#[macro_export]
+macro_rules! try_field {
+    (Report<$to:ty>,  $($body:tt)+) => {
+        bigerror::__field!(
+            $crate::grpc::try_report_field::<_, $to> |
+            $($body)+
+        )
+    };
+    ($to:ty:  $($body:tt)+) => {
+        bigerror::__field!(
+            $crate::grpc::try_report_field::<_, $to> |
+            $($body)+
+        )
+    };
+    ($to:ty,  $($body:tt)+) => {
+        bigerror::__field!(
+            $crate::grpc::try_field::<_, $to> |
+            $($body)+
+        )
+    };
+}
+
+// Option<DynamicVerifier> field, currently proto3 is only able to create optional fields
+// from non-scalar values
+#[macro_export]
+macro_rules! dyn_field {
+    ($($body:tt)+) => {
+        {
+            use $crate::ResultIntoContext;
+
+            $crate::expect_field!($($body)+).and_then_ctx(|v| v.try_into())
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! dyn_field_status {
+    ($($body:tt)+) => {
+        {
+            use $crate::grpc::ReportStatus;
+            $crate::dyn_field!($($body)+).to_status(tonic::Code::InvalidArgument)
+        }
+    };
+}
+
 #[inline]
 #[track_caller]
 pub fn parse_field<U: FromStr>(value: &str, name: &'static str) -> Result<U, Status>
