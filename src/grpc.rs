@@ -4,7 +4,7 @@ use error_stack::{iter::Frames, AttachmentKind, Context, FrameKind, Report};
 use tonic::{Code, Status};
 use tonic_types::{ErrorDetails, StatusExt};
 
-use crate::{attachment, AttachExt, ConversionError, OptionReport, ParseError, ReportAs};
+use crate::{attachment, AttachExt, ConversionError, ParseError, ReportAs};
 
 /// Dentotes the start of a `google.rpc.DebugInfo` message start
 /// https://github.com/googleapis/googleapis/blob/f36c650/google/rpc/error_details.proto#L97-L103
@@ -125,12 +125,6 @@ where
             .to_status(Code::InvalidArgument)),
         Ok(v) => Ok(v),
     }
-}
-
-#[inline]
-#[track_caller]
-pub fn missing_field<T>(value: Option<T>, name: &'static str) -> Result<T, Status> {
-    value.expect_field(name).to_status(Code::InvalidArgument)
 }
 
 pub trait ReportStatus {
