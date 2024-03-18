@@ -7,6 +7,8 @@ pub use thiserror;
 
 pub mod attachment;
 pub mod context;
+#[cfg(feature = "grpc")]
+pub mod grpc;
 
 pub use attachment::Field;
 
