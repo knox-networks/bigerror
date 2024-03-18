@@ -50,14 +50,12 @@ macro_rules! try_field {
     };
 }
 
-// Option<DynamicVerifier> field, currently proto3 is only able to create optional fields
-// from non-scalar values
+// currently proto3 is only able to create optional fields from non-scalar values
 #[macro_export]
 macro_rules! dyn_field {
     ($($body:tt)+) => {
         {
             use $crate::ResultIntoContext;
-
             $crate::expect_field!($($body)+).and_then_ctx(|v| v.try_into())
         }
     };
