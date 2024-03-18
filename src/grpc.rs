@@ -137,8 +137,7 @@ fn status_with_details<C>(report: Report<C>, code: Code, msg: impl Into<String>)
     Status::with_error_details(code, msg, error_details)
 }
 
-// maintain simple wrapper type while the stack trace API is
-// unstable
+// maintain simple wrapper type while the stack trace API is unstable
 fn extract_entries<C>(report: &Report<C>) -> Vec<String> {
     frames_to_entries(report.frames())
 }
@@ -176,17 +175,16 @@ fn frames_to_entries(frames: Frames) -> Vec<String> {
         match frame.kind() {
             // if we're at the bottom of the stack trace provide a "type_name: display" message
             FrameKind::Context(context) if frame.sources().is_empty() => {
-                // strip all characters after a non-alpha match
-                // unil `std::any::type_name_of_val` is stabilized
+                // strip all characters after a non-alpha match unil `std::any::type_name_of_val`
+                // is stabilized
                 // TODO https://doc.rust-lang.org/std/any/fn.type_name_of_val.html
                 let type_name: String = format!("{context:?}")
                     .chars()
                     .take_while(|c| c.is_alphabetic())
                     .collect();
-                // `context` is a `dyn error_stack::Context: Debug + Display + 'static`
-                // so we need to compare the `Display` of our context and see if the
-                // `Debug` and `Display` impls differ,
-                // otherwise we'd be getting stack entries such as:
+                // `context` is a `dyn error_stack::Context: Debug + Display + 'static` so we need
+                // to compare the `Display` of our context and see if the `Debug` and `Display`
+                // impls differ, otherwise we'd be getting stack entries such as:
                 // > `"NotFound: NotFound"`
                 let context = format!("{context}");
                 if type_name == context {
@@ -200,8 +198,7 @@ fn frames_to_entries(frames: Frames) -> Vec<String> {
             }
             FrameKind::Attachment(AttachmentKind::Printable(attachment)) => {
                 entries.push(format!("{attachment_idx}: {attachment}"));
-                // if we've reached the end of the attachment stack
-                // reset attachment_idx
+                // if we've reached the end of the attachment stack reset attachment_idx
                 if let Some(FrameKind::Context(_)) = frame.sources().first().map(|f| f.kind()) {
                     attachment_idx = 0;
                 } else {
