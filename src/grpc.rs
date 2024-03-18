@@ -1,12 +1,171 @@
-use error_stack::{iter::Frames, AttachmentKind, FrameKind, Report};
+use std::{fmt::Display, str::FromStr};
+
+use error_stack::{iter::Frames, AttachmentKind, Context, FrameKind, Report};
 use tonic::{Code, Status};
 use tonic_types::{ErrorDetails, StatusExt};
+
+use crate::{attachment, AttachExt, ConversionError, OptionReport, ParseError, ReportAs};
 
 /// Dentotes the start of a `google.rpc.DebugInfo` message start
 /// https://github.com/googleapis/googleapis/blob/f36c650/google/rpc/error_details.proto#L97-L103
 pub const DEBUG_INFO: &str = "details:";
 /// Denotes the start of a [`tonic::Status`]
 pub const GRPC_ERROR: &str = "GrpcError";
+
+pub trait ErrorStatus<T> {
+    fn map_err_to_status(self, op: impl FnOnce(String) -> Status) -> Result<T, Status>;
+}
+
+impl<T, E> ErrorStatus<T> for Result<T, E>
+where
+    E: Display,
+{
+    fn map_err_to_status(self, op: impl FnOnce(String) -> Status) -> Result<T, Status> {
+        match self {
+            Ok(t) => Ok(t),
+            Err(e) => Err(op(format!("{e}"))),
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! required_field {
+    ($($body:tt)+) => {
+        bigerror::__field!(
+            $crate::error::missing_field |
+            $($body)+
+        )
+    };
+}
+
+#[macro_export]
+macro_rules! uuid_field {
+    ($($body:tt)+) => {
+        bigerror::__field!(
+            $crate::error::parse_field::<uuid::Uuid> |
+            $($body)+
+        )
+    };
+}
+
+// currently only handles multibase string fields
+// MultibaseVerifier field
+#[macro_export]
+macro_rules! mb_field {
+    ($($body:tt)+) => {
+        bigerror::__field!(
+            $crate::error::parse_report_field::<monetae_promissory::Verifier> |
+            $($body)+
+        )
+    };
+}
+
+#[macro_export]
+macro_rules! try_field {
+    (Report<$to:ty>,  $($body:tt)+) => {
+        bigerror::__field!(
+            $crate::error::try_report_field::<_, $to> |
+            $($body)+
+        )
+    };
+    ($to:ty:  $($body:tt)+) => {
+        bigerror::__field!(
+            $crate::error::try_report_field::<_, $to> |
+            $($body)+
+        )
+    };
+    ($to:ty,  $($body:tt)+) => {
+        bigerror::__field!(
+            $crate::error::try_field::<_, $to> |
+            $($body)+
+        )
+    };
+}
+
+// Option<DynamicVerifier> field, currently proto3 is only able to create optional fields
+// from non-scalar values
+#[macro_export]
+macro_rules! dyn_field {
+    ($($body:tt)+) => {
+        {
+            use bigerror::ResultIntoContext;
+
+            bigerror::expect_field!($($body)+).and_then_ctx(|v| v.try_into())
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! dyn_field_status {
+    ($($body:tt)+) => {
+        {
+            use $crate::ReportStatus;
+            $crate::dyn_field!($($body)+).to_status(tonic::Code::InvalidArgument)
+        }
+    };
+}
+
+#[inline]
+#[track_caller]
+pub fn parse_field<U: FromStr>(value: &str, name: &'static str) -> Result<U, Status>
+where
+    U::Err: Context,
+{
+    U::from_str(value)
+        .report_as::<ParseError>()
+        .attach_field_status(name, attachment::Invalid)
+        .to_status(Code::InvalidArgument)
+}
+
+#[inline]
+#[track_caller]
+pub fn parse_report_field<U: FromStr>(value: &str, name: &'static str) -> Result<U, Status>
+where
+    U::Err: AttachExt + ReportStatus,
+{
+    match U::from_str(value) {
+        Err(e) => Err(e
+            .attach_field_status(name, attachment::Invalid)
+            .to_status(Code::InvalidArgument)),
+        Ok(v) => Ok(v),
+    }
+}
+
+#[inline]
+#[track_caller]
+pub fn try_field<T, U: TryFrom<T>>(value: T, name: &'static str) -> Result<U, Status>
+where
+    U: Send + Sync,
+    U::Error: Context,
+{
+    match U::try_from(value) {
+        Err(e) => Err(ConversionError::from::<T, U>(e)
+            .attach_field_status(name, attachment::Invalid)
+            .to_status(Code::InvalidArgument)),
+        Ok(v) => Ok(v),
+    }
+}
+
+#[inline]
+#[track_caller]
+pub fn try_report_field<T, U: TryFrom<T>>(value: T, name: &'static str) -> Result<U, Status>
+where
+    U: Send + Sync,
+    U::Error: AttachExt + ReportStatus,
+{
+    match U::try_from(value) {
+        Err(e) => Err(e
+            .attach_field_status(name, attachment::Invalid)
+            .to_status(Code::InvalidArgument)),
+        Ok(v) => Ok(v),
+    }
+}
+
+#[inline]
+#[track_caller]
+pub fn missing_field<T>(value: Option<T>, name: &'static str) -> Result<T, Status> {
+    value.expect_field(name).to_status(Code::InvalidArgument)
+}
 
 pub trait ReportStatus {
     fn to_status(self, code: Code) -> Status;
