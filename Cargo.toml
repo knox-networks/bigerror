@@ -12,7 +12,7 @@ spantrace = ["error-stack/spantrace"]
 eyre = ["error-stack/eyre"]
 serde = ["error-stack/serde"]
 hooks = ["error-stack/hooks"]
-grpc=[]
+grpc=["tonic", "tonic-types"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,5 +20,5 @@ grpc=[]
 error-stack = "0.4.1"
 thiserror = "1"
 tracing = "0.1"
-tonic = "0.10"
-tonic-types = "0.10"
+tonic = { version = "0.10", optional = true }
+tonic-types = { version = "0.10", optional = true }
