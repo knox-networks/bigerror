@@ -450,6 +450,7 @@ where
     fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
     where
         A: fmt::Debug + Send + Sync + 'static;
+    fn on_err(self, op: impl FnOnce()) -> Result<T, E>;
 }
 
 impl<T, E> LogError<T, E> for Result<T, E>
@@ -497,6 +498,10 @@ where
         if let Err(e) = &self {
             error!(err = ?e, "{attachment:?}");
         }
+        self
+    }
+    fn on_err(self, op: impl FnOnce()) -> Result<T, E> {
+        op();
         self
     }
 }
