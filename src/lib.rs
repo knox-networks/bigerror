@@ -257,6 +257,13 @@ pub trait AttachExt {
     fn attach_dbg<A>(self, value: A) -> Self
     where
         A: Debug;
+    fn attach_variant<A>(self, value: A) -> Self
+    where
+        Self: Sized,
+        A: Display,
+    {
+        self.attach_kv(attachment::Type::of::<A>(), value)
+    }
 }
 
 impl<C> AttachExt for Report<C> {
@@ -445,6 +452,7 @@ where
     fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
     where
         A: fmt::Debug + Send + Sync + 'static;
+    fn on_err(self, op: impl FnOnce()) -> Result<T, E>;
 }
 
 impl<T, E> LogError<T, E> for Result<T, E>
@@ -492,6 +500,10 @@ where
         if let Err(e) = &self {
             error!(err = ?e, "{attachment:?}");
         }
+        self
+    }
+    fn on_err(self, op: impl FnOnce()) -> Result<T, E> {
+        op();
         self
     }
 }
@@ -1025,5 +1037,20 @@ mod test {
             .ok_or_else(|| InvalidInput::expected_actual("Some", "None"));
 
         assert_err!(my_field);
+    }
+
+    #[test]
+    fn attach_variant() {
+        let my_number = 2;
+        let other_number = 3;
+        fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
+            if other != mine {
+                bail!(InvalidInput::attach("expected my number!")
+                    .attach_variant(other)
+                    .into_ctx());
+            }
+            Ok(())
+        }
+        assert_err!(compare(my_number, other_number));
     }
 }
