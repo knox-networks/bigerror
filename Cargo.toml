@@ -1,6 +1,6 @@
 [package]
 name = "bigerror"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2021"
 description = "handle big errors ¯\\_(ツ)_/¯"
 license = "MIT"
@@ -20,5 +20,5 @@ grpc=["tonic", "tonic-types"]
 error-stack = "0.4.1"
 thiserror = "1"
 tracing = "0.1"
-tonic = { version = "0.10", optional = true }
-tonic-types = { version = "0.10", optional = true }
+tonic = { version = "0.11", optional = true }
+tonic-types = { version = "0.11", optional = true }
