@@ -459,12 +459,16 @@ impl<T, E> LogError<T, E> for Result<T, E>
 where
     E: fmt::Debug,
 {
+    #[inline]
+    #[track_caller]
     fn log_err(self) {
         if let Err(e) = self {
             error!(err = ?e);
         }
     }
 
+    #[inline]
+    #[track_caller]
     fn log_attached_err<A>(self, attachment: A)
     where
         A: fmt::Debug + Send + Sync + 'static,
@@ -473,6 +477,8 @@ where
             error!(err = ?e, "{attachment:?}");
         }
     }
+    #[inline]
+    #[track_caller]
     fn and_log(self, level: Level) -> Result<T, E> {
         if let Err(err) = &self {
             match level {
@@ -486,6 +492,8 @@ where
         self
     }
 
+    #[inline]
+    #[track_caller]
     fn and_log_err(self) -> Result<T, E> {
         if let Err(e) = &self {
             error!(err = ?e);
@@ -493,6 +501,8 @@ where
         self
     }
 
+    #[inline]
+    #[track_caller]
     fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
     where
         A: fmt::Debug + Send + Sync + 'static,
@@ -502,6 +512,9 @@ where
         }
         self
     }
+
+    #[inline]
+    #[track_caller]
     fn on_err(self, op: impl FnOnce()) -> Result<T, E> {
         op();
         self
