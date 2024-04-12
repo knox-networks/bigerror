@@ -26,6 +26,8 @@ impl KeyValue<String, String> {
     }
 }
 
+/// Allows one to quickly specify a [`KeyValue`] pair, optionally using a
+/// `ty:` prefix using the `$value` [`Type`] as the key
 #[macro_export]
 macro_rules! kv {
     (ty: $value: literal) => {
