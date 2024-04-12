@@ -30,9 +30,6 @@ impl KeyValue<String, String> {
 /// `ty:` prefix using the `$value` [`Type`] as the key
 #[macro_export]
 macro_rules! kv {
-    (ty: $value: literal) => {
-        $crate::KeyValue($crate::Type::of_val(&$value), $value)
-    };
     (ty: $value: expr) => {
         $crate::KeyValue($crate::Type::of_val(&$value), $value)
     };
@@ -229,12 +226,17 @@ mod test {
     #[test]
     fn kv_macro() {
         let foo = "Foo";
+
+        // foo: "Foo"
         assert_eq!(kv!(foo), KeyValue("foo", "Foo"));
         // <&str>: "Foo"
         assert_eq!(kv!(ty: foo), KeyValue(Type::of_val(&foo), "Foo"));
 
         let foo = 13;
+
         // <i32>: 13
         assert_eq!(kv!(ty: foo), KeyValue(Type::of_val(&foo), 13));
+        // ensure literal values are handled correctly
+        assert_eq!(kv!(ty: 13), KeyValue(Type::of_val(&13), 13));
     }
 }
