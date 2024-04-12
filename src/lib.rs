@@ -1067,7 +1067,7 @@ mod test {
         assert_err!(compare(my_number, other_number));
     }
 
-    // should behave the same as attach_variant
+    // should behave the same as `test::attach_variant`
     // but displays lazy allocation of attachment
     #[test]
     fn attach_kv_macro() {
@@ -1076,7 +1076,7 @@ mod test {
         fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
             if other != mine {
                 return Err(InvalidInput::attach("expected my number!"))
-                    .attach_printable_lazy(|| kv!(ty: other))
+                    .attach_printable_lazy(|| kv!(ty: other)) // <usize>: 3
                     .into_ctx();
             }
             Ok(())

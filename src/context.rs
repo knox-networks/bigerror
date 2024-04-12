@@ -9,12 +9,13 @@ use crate::{
 
 use crate::{attachment::DisplayDuration, reportable, Field};
 
+/// Used to enacpsulate opaque `dyn std::error::Error` types
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
 pub struct BoxError(Box<dyn std::error::Error + 'static + Send + Sync>);
 
-// this is a `BoxError` that satistifes `core::error::Error`
-// using `core::fmt::Debug` and `core::fmt::Display`
+/// this is a [`BoxError`] that satistifes [`core::error::Error`]
+/// using [`core::fmt::Debug`] and [`core::fmt::Display`]
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
 pub struct BoxCoreError(Box<dyn CoreError>);
@@ -57,6 +58,7 @@ reportable!(NetworkError);
 pub struct ParseError;
 reportable!(ParseError);
 
+/// Represents the conversion of an `Option::<T>::None` into a [`Report`]
 #[derive(Debug, thiserror::Error)]
 #[error("NotFound")]
 pub struct NotFound;
@@ -101,11 +103,13 @@ reportable!(InvalidStatus);
 pub struct InvalidState;
 reportable!(InvalidState);
 
+/// Emitted during runtime, indicates problems with input/default settings
 #[derive(Debug, thiserror::Error)]
 #[error("ConfigError")]
 pub struct ConfigError;
 reportable!(ConfigError);
 
+/// Typically emitted by a `build.rs` failure
 #[derive(Debug, thiserror::Error)]
 #[error("BuildError")]
 pub struct BuildError;
