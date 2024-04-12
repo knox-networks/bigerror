@@ -10,9 +10,9 @@ pub mod context;
 #[cfg(feature = "grpc")]
 pub mod grpc;
 
-pub use attachment::Field;
+pub use attachment::{Expectation, Field, Index, KeyValue, Type};
 
-use attachment::{Debug, Display, Expectation, Index, KeyValue};
+use attachment::{Debug, Display};
 pub use context::*;
 
 // TODO we'll have to do a builder pattern here at
@@ -1061,6 +1061,23 @@ mod test {
                 bail!(InvalidInput::attach("expected my number!")
                     .attach_variant(other)
                     .into_ctx());
+            }
+            Ok(())
+        }
+        assert_err!(compare(my_number, other_number));
+    }
+
+    // should behave the same as attach_variant
+    // but displays lazy allocation of attachment
+    #[test]
+    fn attach_kv_macro() {
+        let my_number = 2;
+        let other_number = 3;
+        fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
+            if other != mine {
+                return Err(InvalidInput::attach("expected my number!"))
+                    .attach_printable_lazy(|| kv!(ty: other))
+                    .into_ctx();
             }
             Ok(())
         }
