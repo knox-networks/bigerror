@@ -15,7 +15,7 @@ fix *args: && fmt
 
 # Prints the error stack for a given test to stdout
 printerr test $PRINTERR="true":
-  @cargo test --quiet --lib -- --exact {{test}} --nocapture
+  @cargo test --quiet --lib -- --exact test::{{test}} --nocapture
 
-printerr-all $PRINTERR="true":
-  @cargo test --quiet --lib -- --exact --nocapture
+printerr-all $PRINTERR="true" $RUST_TEST_THREADS="1":
+  @cargo test --lib -- --exact --nocapture

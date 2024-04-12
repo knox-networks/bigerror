@@ -16,7 +16,7 @@ pub trait Debug: std::fmt::Debug + Send + Sync + 'static {}
 impl<A> Debug for A where A: std::fmt::Debug + Send + Sync + 'static {}
 
 // simple key-value pair attachment
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, PartialEq, thiserror::Error)]
 #[error("{0}: {1}")]
 pub struct KeyValue<K, V>(pub K, pub V);
 
@@ -24,6 +24,18 @@ impl KeyValue<String, String> {
     pub fn dbg(key: impl Debug, value: impl Debug) -> Self {
         Self(format!("{key:?}"), format!("{value:?}"))
     }
+}
+
+/// Allows one to quickly specify a [`KeyValue`] pair, optionally using a
+/// `ty:` prefix using the `$value` [`Type`] as the key
+#[macro_export]
+macro_rules! kv {
+    (ty: $value: expr) => {
+        $crate::KeyValue($crate::Type::of_val(&$value), $value)
+    };
+    ($value: expr) => {
+        $crate::KeyValue(stringify!($value), $value)
+    };
 }
 
 #[derive(Debug)]
@@ -49,11 +61,16 @@ impl<Id: Display, S: Display> Field<Id, S> {
 }
 /// wrapper attachment that is used to refer to the type of an object
 /// rather than the value
+#[derive(PartialEq)]
 pub struct Type(&'static str);
 
 impl Type {
     // const fn when type_name is const fn in stable
     pub fn of<T>() -> Self {
+        Self(std::any::type_name::<T>())
+    }
+
+    pub fn of_val<T: ?Sized>(_val: &T) -> Self {
         Self(std::any::type_name::<T>())
     }
 }
@@ -201,3 +218,25 @@ pub fn hms_string(duration: Duration) -> String {
 #[derive(Debug, thiserror::Error)]
 #[error("Index[{0}]")]
 pub struct Index<I: std::fmt::Display>(pub I);
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn kv_macro() {
+        let foo = "Foo";
+
+        // foo: "Foo"
+        assert_eq!(kv!(foo), KeyValue("foo", "Foo"));
+        // <&str>: "Foo"
+        assert_eq!(kv!(ty: foo), KeyValue(Type::of_val(&foo), "Foo"));
+
+        let foo = 13;
+
+        // <i32>: 13
+        assert_eq!(kv!(ty: foo), KeyValue(Type::of_val(&foo), 13));
+        // ensure literal values are handled correctly
+        assert_eq!(kv!(ty: 13), KeyValue(Type::of_val(&13), 13));
+    }
+}
