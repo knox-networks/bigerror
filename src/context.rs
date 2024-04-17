@@ -119,6 +119,11 @@ reportable!(BuildError);
 #[error("{}", Field::new("timeout", DisplayDuration(*.0)))]
 pub struct Timeout(pub Duration);
 
+#[derive(Debug, thiserror::Error)]
+#[error("AssertionError")]
+pub struct AssertionError;
+reportable!(AssertionError);
+
 pub trait CoreError: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
 
 impl<T> CoreError for T where T: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
