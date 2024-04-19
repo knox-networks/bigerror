@@ -184,6 +184,14 @@ impl From<Duration> for DisplayDuration {
     }
 }
 
+impl std::ops::Deref for DisplayDuration {
+    type Target = Duration;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 /// convert a [`Duration`] into a "0H00m00s" string
 pub fn hms_string(duration: Duration) -> String {
     if duration.is_zero() {
