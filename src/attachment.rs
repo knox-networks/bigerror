@@ -29,7 +29,7 @@ impl<A: Debug> std::fmt::Display for Dbg<A> {
 #[derive(Debug, PartialEq)]
 pub struct KeyValue<K, V>(pub K, pub V);
 
-impl<K: Display, V: Display> std::fmt::Display for KeyValue<K, V> {
+impl<K: std::fmt::Display, V: std::fmt::Display> std::fmt::Display for KeyValue<K, V> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}: {}", self.0, self.1)
     }
@@ -165,20 +165,24 @@ impl std::fmt::Display for Symbol {
 
 impl<E: Display, A: Display> std::fmt::Display for Expectation<E, A> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let cr = Symbol::CurveRight;
-        let hl = Symbol::HorizontalLeft;
-        let expected = KeyValue("expected", self.expected.to_string());
-        let actual = KeyValue("actual", self.actual.to_string());
-        write!(f, "{expected}\n{cr}{hl}{actual}")
+        let curve_right = Symbol::CurveRight;
+        let horizontal_left = Symbol::HorizontalLeft;
+        let expected = KeyValue("expected", &self.expected);
+        let actual = KeyValue("actual", &self.actual);
+        // "expected": expected
+        // ╰╴"actual": actual
+        write!(f, "{expected}\n{curve_right}{horizontal_left}{actual}")
     }
 }
 impl<F: Display, T: Display> std::fmt::Display for FromTo<F, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let cr = Symbol::CurveRight;
-        let hl = Symbol::HorizontalLeft;
-        let from = KeyValue("from", self.0.to_string());
-        let to = KeyValue("to", self.1.to_string());
-        write!(f, "{from}\n{cr}{hl}{to}",)
+        let curve_right = Symbol::CurveRight;
+        let horizontal_left = Symbol::HorizontalLeft;
+        let from = KeyValue("from", &self.0);
+        let to = KeyValue("to", &self.1);
+        // "from": from
+        // ╰╴"to": to
+        write!(f, "{from}\n{curve_right}{horizontal_left}{to}")
     }
 }
 
