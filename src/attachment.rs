@@ -15,14 +15,29 @@ pub trait Debug: std::fmt::Debug + Send + Sync + 'static {}
 
 impl<A> Debug for A where A: std::fmt::Debug + Send + Sync + 'static {}
 
+// used to wrap types that only implement `std::fmt::Debug`
+#[derive(Debug)]
+pub struct Dbg<A: Debug>(pub A);
+
+impl<A: Debug> std::fmt::Display for Dbg<A> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+
 // simple key-value pair attachment
-#[derive(Debug, PartialEq, thiserror::Error)]
-#[error("{0}: {1}")]
+#[derive(Debug, PartialEq)]
 pub struct KeyValue<K, V>(pub K, pub V);
 
-impl KeyValue<String, String> {
-    pub fn dbg(key: impl Debug, value: impl Debug) -> Self {
-        Self(format!("{key:?}"), format!("{value:?}"))
+impl<K: Display, V: Display> std::fmt::Display for KeyValue<K, V> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}: {}", self.0, self.1)
+    }
+}
+
+impl<K: Display, V: Debug> KeyValue<K, Dbg<V>> {
+    pub fn dbg(key: K, value: V) -> Self {
+        Self(key, Dbg(value))
     }
 }
 
@@ -152,20 +167,17 @@ impl<E: Display, A: Display> std::fmt::Display for Expectation<E, A> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let cr = Symbol::CurveRight;
         let hl = Symbol::HorizontalLeft;
-        write!(
-            f,
-            "{}\n{cr}{hl}{}",
-            KeyValue("expected", &self.expected),
-            KeyValue("actual", &self.actual)
-        )
+        let expected = KeyValue("expected", self.expected.to_string());
+        let actual = KeyValue("actual", self.actual.to_string());
+        write!(f, "{expected}\n{cr}{hl}{actual}")
     }
 }
 impl<F: Display, T: Display> std::fmt::Display for FromTo<F, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let cr = Symbol::CurveRight;
         let hl = Symbol::HorizontalLeft;
-        let from = KeyValue("from", &self.0);
-        let to = KeyValue("to", &self.1);
+        let from = KeyValue("from", self.0.to_string());
+        let to = KeyValue("to", self.1.to_string());
         write!(f, "{from}\n{cr}{hl}{to}",)
     }
 }
