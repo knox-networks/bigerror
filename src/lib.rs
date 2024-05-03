@@ -365,7 +365,7 @@ where
     }
     #[inline]
     #[track_caller]
-    fn and_log(self, level: Level) -> Result<T, E> {
+    fn and_log(self, level: Level) -> Self {
         if let Err(err) = &self {
             match level {
                 Level::TRACE => trace!(?err),
@@ -380,7 +380,7 @@ where
 
     #[inline]
     #[track_caller]
-    fn and_log_err(self) -> Result<T, E> {
+    fn and_log_err(self) -> Self {
         if let Err(e) = &self {
             error!(message = ?e);
         }
@@ -389,7 +389,7 @@ where
 
     #[inline]
     #[track_caller]
-    fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
+    fn and_attached_err<A>(self, attachment: A) -> Self
     where
         A: fmt::Debug + Send + Sync + 'static,
     {
@@ -401,7 +401,7 @@ where
 
     #[inline]
     #[track_caller]
-    fn on_err(self, op: impl FnOnce()) -> Result<T, E> {
+    fn on_err(self, op: impl FnOnce()) -> Self {
         op();
         self
     }
@@ -444,7 +444,7 @@ pub trait FromReport<C> {
 /// USAGE:
 /// * `impl From<SomeError as ToReport<_> $(as $context:path)*> for OurError::Report(OurReportError)`
 ///  - Implements `From<E> where E: ToReport<_>` for  errors that implement [`ToReport`]
-/// * impl From<Report<SomeError>>> for OurError::Report(TransactionError)
+/// * impl From<Report<SomeError>>> for `OurError::Report(TransactionError`)
 ///  - Implements `From<Report<SomeError>>` for `Report<OurReportError>`
 /// * `impl From<SomeError $(as $context:path)*> for OurError::Report(TransactionError)`
 ///  - Implements `From<SomeError>` for `Report<OurReportError>`
@@ -633,7 +633,7 @@ where
 }
 
 impl<C> ToReport<C> for Report<C> {
-    fn to_report(self) -> Report<C> {
+    fn to_report(self) -> Self {
         self
     }
 }

@@ -159,7 +159,7 @@ impl fmt::Display for Symbol {
             Self::CurveRight => "\u{2570}",     // ╰
             Self::Space => " ",
         };
-        write!(f, "{}", utf8)
+        write!(f, "{utf8}")
     }
 }
 
