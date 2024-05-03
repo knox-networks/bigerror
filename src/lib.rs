@@ -12,7 +12,7 @@ pub mod grpc;
 
 pub use attachment::{Expectation, Field, Index, KeyValue, Type};
 
-use attachment::{Debug, Display};
+use attachment::{Dbg, Debug, Display};
 pub use context::*;
 
 // TODO we'll have to do a builder pattern here at
@@ -35,27 +35,47 @@ pub trait Reportable
 where
     Self: Sized + Context,
 {
-    fn report<C: Context>(ctx: C) -> Report<Self>;
+    fn value() -> Self;
+    fn report<C: Context>(ctx: C) -> Report<Self> {
+        Report::new(ctx).change_context(Self::value())
+    }
     // TODO
     // fn report_dyn_err(err: impl std::error::Error + 'static + Send + Sync)
     // -> Report<Self>;
+    #[track_caller]
     fn attach<A>(value: A) -> Report<Self>
     where
-        A: Display;
+        A: Display,
+    {
+        Report::new(Self::value()).attach_printable(value)
+    }
+    #[track_caller]
     fn attach_dbg<A>(value: A) -> Report<Self>
     where
-        A: Debug;
+        A: Debug,
+    {
+        Self::attach(Dbg(value))
+    }
+    #[track_caller]
     fn with_kv<K, V>(key: K, value: V) -> Report<Self>
     where
         K: Display,
-        V: Display;
+        V: Display,
+    {
+        Self::attach(KeyValue(key, value))
+    }
+    #[track_caller]
     fn with_kv_dbg<K, V>(key: K, value: V) -> Report<Self>
     where
-        K: Debug,
-        V: Debug;
-    fn with_field_status<S: Display>(key: &'static str, status: S) -> Report<Self>;
-
-    fn value() -> Self;
+        K: Display,
+        V: Debug,
+    {
+        Self::attach(KeyValue::dbg(key, value))
+    }
+    #[track_caller]
+    fn with_field_status<S: Display>(key: &'static str, status: S) -> Report<Self> {
+        Self::attach(Field::new(key, status))
+    }
 
     #[track_caller]
     fn expected_actual<A: attachment::Display>(expected: A, actual: A) -> Report<Self> {
@@ -99,22 +119,6 @@ impl<T, E: Context> ReportAs<T> for Result<T, E> {
             Ok(v) => Ok(v),
             Err(e) => Err(Report::new(C::value()).attach_printable(e)),
         }
-    }
-}
-
-impl<T> ReportAs<T> for &'static str {
-    #[inline]
-    #[track_caller]
-    fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
-        Err(Report::new(C::value()).attach_printable(self))
-    }
-}
-
-impl<T> ReportAs<T> for String {
-    #[inline]
-    #[track_caller]
-    fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
-        Err(Report::new(C::value()).attach_printable(self))
     }
 }
 
@@ -191,49 +195,6 @@ macro_rules! reportable {
                 $crate::Report::new(ctx).change_context(Self)
             }
 
-            #[track_caller]
-            fn attach<A>(value: A) -> $crate::Report<Self>
-            where
-                A: $crate::attachment::Display,
-            {
-                $crate::Report::new(Self).attach_printable(value)
-            }
-
-            #[track_caller]
-            fn attach_dbg<A>(value: A) -> $crate::Report<Self>
-            where
-                A: $crate::attachment::Debug,
-            {
-                $crate::Report::new(Self).attach_printable(format!("{value:?}"))
-            }
-
-            #[track_caller]
-            fn with_kv<K, V>(key: K, value: V) -> $crate::Report<Self>
-            where
-                K: $crate::attachment::Display,
-                V: $crate::attachment::Display,
-            {
-                use $crate::AttachExt;
-                $crate::Report::new(Self).attach_kv(key, value)
-            }
-            #[track_caller]
-            fn with_kv_dbg<K, V>(key: K, value: V) -> $crate::Report<Self>
-            where
-                K: $crate::attachment::Debug,
-                V: $crate::attachment::Debug,
-            {
-                use $crate::AttachExt;
-                $crate::Report::new(Self).attach_kv_dbg(key, value)
-            }
-            #[track_caller]
-            fn with_field_status<S>(key: &'static str, status: S) -> $crate::Report<Self>
-            where
-                S: $crate::attachment::Display,
-            {
-                $crate::Report::new(Self)
-                    .attach_printable($crate::attachment::Field::new(key, status))
-            }
-
             fn value() -> Self {
                 $context
             }
@@ -248,7 +209,7 @@ pub trait AttachExt {
         V: Display;
     fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Self
     where
-        K: Debug,
+        K: Display,
         V: Debug;
 
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
@@ -281,7 +242,7 @@ impl<C> AttachExt for Report<C> {
     #[track_caller]
     fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Self
     where
-        K: Debug,
+        K: Display,
         V: Debug,
     {
         self.attach_printable(KeyValue::dbg(key, value))
@@ -302,7 +263,7 @@ impl<C> AttachExt for Report<C> {
     where
         A: Debug,
     {
-        self.attach_printable(format!("{value:?}"))
+        self.attach_printable(Dbg(value))
     }
 }
 
@@ -324,7 +285,7 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
     #[track_caller]
     fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Self
     where
-        K: Debug,
+        K: Display,
         V: Debug,
     {
         match self {
@@ -353,82 +314,7 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
     {
         match self {
             Ok(ok) => Ok(ok),
-            Err(report) => Err(report.attach_printable(format!("{value:?}"))),
-        }
-    }
-}
-
-pub trait ResultAttachExt: ResultExt {
-    fn attach_kv<K, V>(self, key: K, value: V) -> Result<Self::Ok, Report<Self::Context>>
-    where
-        K: Display,
-        V: Display;
-    fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Result<Self::Ok, Report<Self::Context>>
-    where
-        K: Debug,
-        V: Debug;
-
-    fn attach_field_status<S>(
-        self,
-        name: &'static str,
-        status: S,
-    ) -> Result<Self::Ok, Report<Self::Context>>
-    where
-        S: Display;
-    fn attach_dbg<A>(self, value: A) -> Result<Self::Ok, Report<Self::Context>>
-    where
-        A: Debug;
-}
-
-impl<T, C> ResultAttachExt for Result<T, C>
-where
-    C: Context,
-{
-    #[inline]
-    #[track_caller]
-    fn attach_kv<K, V>(self, key: K, value: V) -> Result<T, Report<C>>
-    where
-        K: Display,
-        V: Display,
-    {
-        match self {
-            Ok(ok) => Ok(ok),
-            Err(e) => Err(Report::from(e).attach_printable(KeyValue(key, value))),
-        }
-    }
-    #[inline]
-    #[track_caller]
-    fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Result<T, Report<C>>
-    where
-        K: Debug,
-        V: Debug,
-    {
-        match self {
-            Ok(ok) => Ok(ok),
-            Err(e) => Err(Report::from(e).attach_printable(KeyValue::dbg(key, value))),
-        }
-    }
-
-    #[inline]
-    #[track_caller]
-    fn attach_field_status<S>(self, name: &'static str, status: S) -> Result<T, Report<C>>
-    where
-        S: Display,
-    {
-        match self {
-            Ok(ok) => Ok(ok),
-            Err(e) => Err(Report::from(e).attach_printable(Field::new(name, status))),
-        }
-    }
-    #[inline]
-    #[track_caller]
-    fn attach_dbg<A>(self, value: A) -> Result<T, Report<C>>
-    where
-        A: Debug,
-    {
-        match self {
-            Ok(ok) => Ok(ok),
-            Err(e) => Err(Report::from(e).attach_printable(format!("{value:?}"))),
+            Err(report) => Err(report.attach_printable(Dbg(value))),
         }
     }
 }
@@ -463,7 +349,7 @@ where
     #[track_caller]
     fn log_err(self) {
         if let Err(e) = self {
-            error!(err = ?e);
+            error!(message = ?e);
         }
     }
 
@@ -479,7 +365,7 @@ where
     }
     #[inline]
     #[track_caller]
-    fn and_log(self, level: Level) -> Result<T, E> {
+    fn and_log(self, level: Level) -> Self {
         if let Err(err) = &self {
             match level {
                 Level::TRACE => trace!(?err),
@@ -494,16 +380,16 @@ where
 
     #[inline]
     #[track_caller]
-    fn and_log_err(self) -> Result<T, E> {
+    fn and_log_err(self) -> Self {
         if let Err(e) = &self {
-            error!(err = ?e);
+            error!(message = ?e);
         }
         self
     }
 
     #[inline]
     #[track_caller]
-    fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
+    fn and_attached_err<A>(self, attachment: A) -> Self
     where
         A: fmt::Debug + Send + Sync + 'static,
     {
@@ -515,7 +401,7 @@ where
 
     #[inline]
     #[track_caller]
-    fn on_err(self, op: impl FnOnce()) -> Result<T, E> {
+    fn on_err(self, op: impl FnOnce()) -> Self {
         op();
         self
     }
@@ -558,7 +444,7 @@ pub trait FromReport<C> {
 /// USAGE:
 /// * `impl From<SomeError as ToReport<_> $(as $context:path)*> for OurError::Report(OurReportError)`
 ///  - Implements `From<E> where E: ToReport<_>` for  errors that implement [`ToReport`]
-/// * impl From<Report<SomeError>>> for OurError::Report(TransactionError)
+/// * `impl From<Report<SomeError>>> for OurError::Report(TransactionError)`
 ///  - Implements `From<Report<SomeError>>` for `Report<OurReportError>`
 /// * `impl From<SomeError $(as $context:path)*> for OurError::Report(TransactionError)`
 ///  - Implements `From<SomeError>` for `Report<OurReportError>`
@@ -747,26 +633,42 @@ where
 }
 
 impl<C> ToReport<C> for Report<C> {
-    fn to_report(self) -> Report<C> {
+    fn to_report(self) -> Self {
         self
     }
 }
 
 /// Used to produce [`NotFound`] reports from an [`Option`]
-pub trait OptionReport {
-    type Some;
-    fn expect_or(self) -> Result<Self::Some, Report<NotFound>>;
-    fn expect_kv<K, V>(self, key: K, value: V) -> Result<Self::Some, Report<NotFound>>
+pub trait OptionReport<T>
+where
+    Self: Sized,
+{
+    fn expect_or(self) -> Result<T, Report<NotFound>>;
+    fn expect_kv<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
     where
         K: Display,
         V: Display;
-    fn expect_field(self, field: &'static str) -> Result<Self::Some, Report<NotFound>>;
-    fn expect_by<K: Display>(self, key: K) -> Result<Self::Some, Report<NotFound>>;
+    fn expect_field(self, field: &'static str) -> Result<T, Report<NotFound>>;
+
+    #[inline]
+    #[track_caller]
+    fn expect_kv_dbg<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
+    where
+        K: Display,
+        V: Debug,
+    {
+        self.expect_kv(key, Dbg(value))
+    }
+
+    #[inline]
+    #[track_caller]
+    fn expect_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
+        self.expect_kv(Index(key), ty!(T))
+    }
 }
 
-impl<T> OptionReport for Option<T> {
-    type Some = T;
-
+impl<T> OptionReport<T> for Option<T> {
+    #[inline]
     #[track_caller]
     fn expect_or(self) -> Result<T, Report<NotFound>> {
         // TODO #[track_caller] on closure
@@ -778,6 +680,7 @@ impl<T> OptionReport for Option<T> {
         }
     }
 
+    #[inline]
     #[track_caller]
     fn expect_kv<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
     where
@@ -790,19 +693,12 @@ impl<T> OptionReport for Option<T> {
         }
     }
 
+    #[inline]
     #[track_caller]
     fn expect_field(self, field: &'static str) -> Result<T, Report<NotFound>> {
         match self {
             Some(v) => Ok(v),
             None => Err(NotFound::with_field(field)),
-        }
-    }
-
-    #[track_caller]
-    fn expect_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
-        match self {
-            Some(v) => Ok(v),
-            None => Err(NotFound::with_kv(Index(key), attachment::Type::of::<K>())),
         }
     }
 }
@@ -1082,5 +978,12 @@ mod test {
             Ok(())
         }
         assert_err!(compare(my_number, other_number));
+    }
+
+    #[test]
+    fn expect_by() {
+        let arr = ["a", "b"];
+        let get_oob = arr.get(2).expect_by(2);
+        assert_err!(get_oob);
     }
 }
