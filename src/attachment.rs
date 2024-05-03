@@ -237,10 +237,10 @@ pub fn hms_string(duration: Duration) -> String {
 
 // this is meant to explicitly indicate
 // that the underlying `A` is being
-// used as an index key for getter methods
+// used as an index key for getter methods in a collection
 // such as `HashMap` keys and `Vec` indices
 #[derive(Debug, thiserror::Error)]
-#[error("Index[{0}]")]
+#[error("idx [{0}: {}]", std::any::type_name::<I>())]
 pub struct Index<I: std::fmt::Display>(pub I);
 
 #[cfg(test)]

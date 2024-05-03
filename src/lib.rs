@@ -349,7 +349,7 @@ where
     #[track_caller]
     fn log_err(self) {
         if let Err(e) = self {
-            error!(err = ?e);
+            error!(message = ?e);
         }
     }
 
@@ -382,7 +382,7 @@ where
     #[track_caller]
     fn and_log_err(self) -> Result<T, E> {
         if let Err(e) = &self {
-            error!(err = ?e);
+            error!(message = ?e);
         }
         self
     }
@@ -639,20 +639,36 @@ impl<C> ToReport<C> for Report<C> {
 }
 
 /// Used to produce [`NotFound`] reports from an [`Option`]
-pub trait OptionReport {
-    type Some;
-    fn expect_or(self) -> Result<Self::Some, Report<NotFound>>;
-    fn expect_kv<K, V>(self, key: K, value: V) -> Result<Self::Some, Report<NotFound>>
+pub trait OptionReport<T>
+where
+    Self: Sized,
+{
+    fn expect_or(self) -> Result<T, Report<NotFound>>;
+    fn expect_kv<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
     where
         K: Display,
         V: Display;
-    fn expect_field(self, field: &'static str) -> Result<Self::Some, Report<NotFound>>;
-    fn expect_by<K: Display>(self, key: K) -> Result<Self::Some, Report<NotFound>>;
+    fn expect_field(self, field: &'static str) -> Result<T, Report<NotFound>>;
+
+    #[inline]
+    #[track_caller]
+    fn expect_kv_dbg<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
+    where
+        K: Display,
+        V: Debug,
+    {
+        self.expect_kv(key, Dbg(value))
+    }
+
+    #[inline]
+    #[track_caller]
+    fn expect_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
+        self.expect_kv(Index(key), ty!(T))
+    }
 }
 
-impl<T> OptionReport for Option<T> {
-    type Some = T;
-
+impl<T> OptionReport<T> for Option<T> {
+    #[inline]
     #[track_caller]
     fn expect_or(self) -> Result<T, Report<NotFound>> {
         // TODO #[track_caller] on closure
@@ -664,6 +680,7 @@ impl<T> OptionReport for Option<T> {
         }
     }
 
+    #[inline]
     #[track_caller]
     fn expect_kv<K, V>(self, key: K, value: V) -> Result<T, Report<NotFound>>
     where
@@ -676,19 +693,12 @@ impl<T> OptionReport for Option<T> {
         }
     }
 
+    #[inline]
     #[track_caller]
     fn expect_field(self, field: &'static str) -> Result<T, Report<NotFound>> {
         match self {
             Some(v) => Ok(v),
             None => Err(NotFound::with_field(field)),
-        }
-    }
-
-    #[track_caller]
-    fn expect_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
-        match self {
-            Some(v) => Ok(v),
-            None => Err(NotFound::with_kv(Index(key), attachment::Type::of::<K>())),
         }
     }
 }
@@ -968,5 +978,12 @@ mod test {
             Ok(())
         }
         assert_err!(compare(my_number, other_number));
+    }
+
+    #[test]
+    fn expect_by() {
+        let arr = ["a", "b"];
+        let get_oob = arr.get(2).expect_by(2);
+        assert_err!(get_oob);
     }
 }
