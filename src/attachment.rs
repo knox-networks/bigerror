@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{any, fmt, time::Duration};
 
 use tracing::error;
 
@@ -7,20 +7,20 @@ pub use thiserror;
 
 use crate::reportable;
 
-pub trait Display: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {}
+pub trait Display: fmt::Display + fmt::Debug + Send + Sync + 'static {}
 
-impl<A> Display for A where A: std::fmt::Display + std::fmt::Debug + Send + Sync + 'static {}
+impl<A> Display for A where A: fmt::Display + fmt::Debug + Send + Sync + 'static {}
 
-pub trait Debug: std::fmt::Debug + Send + Sync + 'static {}
+pub trait Debug: fmt::Debug + Send + Sync + 'static {}
 
-impl<A> Debug for A where A: std::fmt::Debug + Send + Sync + 'static {}
+impl<A> Debug for A where A: fmt::Debug + Send + Sync + 'static {}
 
 // used to wrap types that only implement `std::fmt::Debug`
 #[derive(Debug)]
 pub struct Dbg<A: Debug>(pub A);
 
-impl<A: Debug> std::fmt::Display for Dbg<A> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<A: Debug> fmt::Display for Dbg<A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.0)
     }
 }
@@ -29,8 +29,8 @@ impl<A: Debug> std::fmt::Display for Dbg<A> {
 #[derive(Debug, PartialEq)]
 pub struct KeyValue<K, V>(pub K, pub V);
 
-impl<K: std::fmt::Display, V: std::fmt::Display> std::fmt::Display for KeyValue<K, V> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<K: fmt::Display, V: fmt::Display> fmt::Display for KeyValue<K, V> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}: {}", self.0, self.1)
     }
 }
@@ -63,8 +63,8 @@ pub struct Field<Id, S> {
     status: S,
 }
 
-impl<Id: Display, S: Display> std::fmt::Display for Field<Id, S> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<Id: Display, S: Display> fmt::Display for Field<Id, S> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}: {}", self.id, self.status)
     }
 }
@@ -82,22 +82,22 @@ pub struct Type(&'static str);
 impl Type {
     // const fn when type_name is const fn in stable
     pub fn of<T>() -> Self {
-        Self(std::any::type_name::<T>())
+        Self(any::type_name::<T>())
     }
 
     pub fn of_val<T: ?Sized>(_val: &T) -> Self {
-        Self(std::any::type_name::<T>())
+        Self(any::type_name::<T>())
     }
 }
 
-impl std::fmt::Display for Type {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "<{}>", self.0)
     }
 }
 
-impl std::fmt::Debug for Type {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Debug for Type {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Type").field(&self.0).finish()
     }
 }
@@ -147,8 +147,8 @@ enum Symbol {
     Space,
 }
 
-impl std::fmt::Display for Symbol {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Symbol {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let utf8 = match self {
             Self::Vertical => "\u{2502}",       // │
             Self::VerticalRight => "\u{251c}",  // ├
@@ -163,8 +163,8 @@ impl std::fmt::Display for Symbol {
     }
 }
 
-impl<E: Display, A: Display> std::fmt::Display for Expectation<E, A> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<E: Display, A: Display> fmt::Display for Expectation<E, A> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let curve_right = Symbol::CurveRight;
         let horizontal_left = Symbol::HorizontalLeft;
         let expected = KeyValue("expected", &self.expected);
@@ -174,8 +174,8 @@ impl<E: Display, A: Display> std::fmt::Display for Expectation<E, A> {
         write!(f, "{expected}\n{curve_right}{horizontal_left}{actual}")
     }
 }
-impl<F: Display, T: Display> std::fmt::Display for FromTo<F, T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl<F: Display, T: Display> fmt::Display for FromTo<F, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let curve_right = Symbol::CurveRight;
         let horizontal_left = Symbol::HorizontalLeft;
         let from = KeyValue("from", &self.0);
@@ -188,8 +188,8 @@ impl<F: Display, T: Display> std::fmt::Display for FromTo<F, T> {
 
 #[derive(Debug)]
 pub struct DisplayDuration(pub Duration);
-impl std::fmt::Display for DisplayDuration {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for DisplayDuration {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", hms_string(self.0))
     }
 }
@@ -241,7 +241,7 @@ pub fn hms_string(duration: Duration) -> String {
 // such as `HashMap` keys and `Vec` indices
 #[derive(Debug, thiserror::Error)]
 #[error("idx [{0}: {}]", std::any::type_name::<I>())]
-pub struct Index<I: std::fmt::Display>(pub I);
+pub struct Index<I: fmt::Display>(pub I);
 
 #[cfg(test)]
 mod test {
