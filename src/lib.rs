@@ -444,7 +444,7 @@ pub trait FromReport<C> {
 /// USAGE:
 /// * `impl From<SomeError as ToReport<_> $(as $context:path)*> for OurError::Report(OurReportError)`
 ///  - Implements `From<E> where E: ToReport<_>` for  errors that implement [`ToReport`]
-/// * impl From<Report<SomeError>>> for `OurError::Report(TransactionError`)
+/// * `impl From<Report<SomeError>>> for OurError::Report(TransactionError)`
 ///  - Implements `From<Report<SomeError>>` for `Report<OurReportError>`
 /// * `impl From<SomeError $(as $context:path)*> for OurError::Report(TransactionError)`
 ///  - Implements `From<SomeError>` for `Report<OurReportError>`
