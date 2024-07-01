@@ -1,6 +1,6 @@
 use core::fmt::{Debug, Display};
 
-use error_stack::Context;
+use crate::error_stack::Context;
 
 /// Classification of the contents of a [`Frame`], determined by how it was created.
 ///

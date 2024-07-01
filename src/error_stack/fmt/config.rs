@@ -1,6 +1,6 @@
-use error_stack::fmt::{Charset, ColorMode};
+use crate::error_stack::fmt::{Charset, ColorMode};
 #[cfg(any(feature = "std", feature = "hooks"))]
-use error_stack::fmt::{Format, HookContext};
+use crate::error_stack::fmt::{Format, HookContext};
 
 #[cfg(any(feature = "std", feature = "hooks"))]
 pub(crate) struct Config {

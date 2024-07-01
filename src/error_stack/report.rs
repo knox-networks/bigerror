@@ -1,3 +1,5 @@
+#[cfg_attr(feature = "std", allow(unused_imports))]
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::{error::Error, fmt, marker::PhantomData, mem, panic::Location};
 #[cfg(feature = "std")]
 use std::backtrace::{Backtrace, BacktraceStatus};
@@ -8,8 +10,8 @@ use std::process::ExitCode;
 use tracing_error::{SpanTrace, SpanTraceStatus};
 
 #[cfg(nightly)]
-use error_stack::iter::{RequestRef, RequestValue};
-use error_stack::{
+use crate::error_stack::iter::{RequestRef, RequestValue};
+use crate::error_stack::{
     iter::{Frames, FramesMut},
     Context, Frame,
 };
@@ -629,7 +631,7 @@ impl<C> Report<C> {
     where
         C: 'static,
     {
-        error_stack::error::ReportError::new(self)
+        crate::error_stack::error::ReportError::new(self)
     }
 
     /// Returns this `Report` as an [`Error`].
@@ -638,7 +640,7 @@ impl<C> Report<C> {
     where
         C: 'static,
     {
-        error_stack::error::ReportError::from_ref(self)
+        crate::error_stack::error::ReportError::from_ref(self)
     }
 }
 

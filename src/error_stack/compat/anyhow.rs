@@ -1,6 +1,6 @@
 use anyhow::Error as AnyhowError;
 
-use error_stack::{Frame, IntoReportCompat, Report, Result};
+use crate::error_stack::{Frame, IntoReportCompat, Report, Result};
 
 impl<T> IntoReportCompat for core::result::Result<T, AnyhowError> {
     type Err = AnyhowError;

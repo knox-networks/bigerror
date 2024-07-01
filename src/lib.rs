@@ -2,13 +2,19 @@
     not(miri),
     doc(test(attr(deny(warnings, clippy::pedantic, clippy::nursery))))
 )]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(
+    nightly,
+    feature(error_generic_member_access),
+    allow(clippy::incompatible_msrv)
+)]
+#![cfg_attr(all(doc, nightly), feature(doc_auto_cfg))]
+#![cfg_attr(all(nightly, feature = "std"), feature(backtrace_frames))]
+#![allow(unsafe_code)]
+// This is an error handling library producing Results, not Errors
+#![allow(clippy::missing_errors_doc)]
 
-use error_stack::fmt::ColorMode;
-use std::fmt;
-use tracing::{debug, error, info, trace, warn, Level};
-
-pub use error_stack::{Context, Report, ResultExt};
-pub use thiserror;
+extern crate alloc;
 
 pub mod attachment;
 pub mod context;
@@ -17,9 +23,15 @@ pub mod error_stack;
 pub mod grpc;
 
 pub use attachment::{Expectation, Field, Index, KeyValue, Type};
+pub use context::*;
 
 use attachment::{Dbg, Debug, Display};
-pub use context::*;
+use error_stack::fmt::ColorMode;
+use std::fmt;
+use tracing::{debug, error, info, trace, warn, Level};
+
+pub use error_stack::{Context, Report, ResultExt};
+pub use thiserror;
 
 // TODO we'll have to do a builder pattern here at
 // some point

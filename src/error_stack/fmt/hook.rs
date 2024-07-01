@@ -9,7 +9,7 @@ use core::{any::TypeId, mem};
 
 pub(crate) use default::install_builtin_hooks;
 
-use error_stack::fmt::{charset::Charset, ColorMode, Frame};
+use crate::error_stack::fmt::{charset::Charset, ColorMode, Frame};
 
 pub(crate) struct Format {
     alternate: bool,
@@ -43,7 +43,7 @@ impl Format {
     }
 }
 
-error_stack::hook::context::impl_hook_context! {
+crate::hook::context::impl_hook_context! {
     /// Carrier for contextual information used across hook invocations.
     ///
     /// `HookContext` has two fundamental use-cases:

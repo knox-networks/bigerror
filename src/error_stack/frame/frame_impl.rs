@@ -2,7 +2,7 @@
 use core::error::{Error, Request};
 use core::{any::Any, fmt};
 
-use error_stack::{AttachmentKind, Context, Frame, FrameKind};
+use crate::error_stack::{AttachmentKind, Context, Frame, FrameKind};
 
 /// Internal representation of a [`Frame`].
 pub(super) trait FrameImpl: Send + Sync + 'static {

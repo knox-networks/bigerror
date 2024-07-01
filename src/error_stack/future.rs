@@ -12,7 +12,7 @@ use core::{
     task::{Context as TaskContext, Poll},
 };
 
-use error_stack::{Context, Result, ResultExt};
+use crate::error_stack::{Context, Result, ResultExt};
 
 macro_rules! implement_future_adaptor {
     ($future:ident, $method:ident, $bound:ident $(+ $bounds:ident)* $(+ $lifetime:lifetime)*, $output:ty) => {

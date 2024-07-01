@@ -1,6 +1,6 @@
 use core::fmt::{self, Display, Formatter};
 
-use error_stack::{
+use crate::error_stack::{
     fmt::r#override::{AtomicOverride, AtomicPreference},
     Report,
 };

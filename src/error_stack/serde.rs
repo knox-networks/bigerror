@@ -18,7 +18,7 @@ use alloc::{format, vec, vec::Vec};
 
 use serde::{ser::SerializeMap, Serialize, Serializer};
 
-use error_stack::{AttachmentKind, Context, Frame, FrameKind, Report};
+use crate::error_stack::{AttachmentKind, Context, Frame, FrameKind, Report};
 
 struct SerializeAttachment<'a>(&'a Frame);
 

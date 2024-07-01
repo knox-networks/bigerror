@@ -1,6 +1,6 @@
 use core::fmt;
 
-use error_stack::{Context, Report};
+use crate::error_stack::{Context, Report};
 
 /// [`Result`](std::result::Result)`<T, `[`Report<C>`](Report)`>`
 ///

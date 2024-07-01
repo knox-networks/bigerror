@@ -323,7 +323,7 @@ pub(crate) use hook::{install_builtin_hooks, Format, Hooks};
 #[cfg(not(any(feature = "std", feature = "hooks")))]
 use location::LocationAttachment;
 
-use error_stack::{
+use crate::error_stack::{
     fmt::{
         color::{Color, DisplayStyle, Style},
         config::Config,

@@ -2,7 +2,7 @@
 //!
 //! In order to convert these error types, use [`IntoReportCompat::into_report()`].
 
-use error_stack::Report;
+use crate::error_stack::Report;
 
 #[cfg(feature = "anyhow")]
 mod anyhow;

@@ -1,6 +1,6 @@
 use core::{fmt, panic::Location};
 
-use error_stack::fmt::color::{Color, ColorMode, DisplayStyle, Style};
+use crate::error_stack::fmt::color::{Color, ColorMode, DisplayStyle, Style};
 
 pub(super) struct LocationAttachment<'a, 'loc> {
     location: &'a Location<'loc>,

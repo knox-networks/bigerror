@@ -1,6 +1,6 @@
 use eyre::Report as EyreReport;
 
-use error_stack::{Frame, IntoReportCompat, Report, Result};
+use crate::error_stack::{Frame, IntoReportCompat, Report, Result};
 
 impl<T> IntoReportCompat for core::result::Result<T, EyreReport> {
     type Err = EyreReport;

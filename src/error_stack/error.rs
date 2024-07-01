@@ -4,7 +4,7 @@ use core::fmt;
 #[cfg(not(nightly))]
 use std::error::Error;
 
-use error_stack::Report;
+use crate::error_stack::Report;
 
 #[repr(transparent)]
 pub(crate) struct ReportError<C>(Report<C>);

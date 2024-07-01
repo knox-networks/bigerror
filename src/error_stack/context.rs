@@ -1,8 +1,10 @@
 #[cfg(nightly)]
-use core::error::Request;
-use core::{error::Error, fmt};
+use core::error::{Error, Request};
+use core::fmt;
+#[cfg(all(not(nightly), feature = "std"))]
+use std::error::Error;
 
-use error_stack::Report;
+use crate::error_stack::Report;
 
 /// Defines the current context of a [`Report`].
 ///

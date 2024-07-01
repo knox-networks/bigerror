@@ -10,7 +10,7 @@ use core::{
     slice::{Iter, IterMut},
 };
 
-use error_stack::Frame;
+use crate::error_stack::Frame;
 
 /// Helper function, which is used in both [`Frames`] and [`FramesMut`].
 ///

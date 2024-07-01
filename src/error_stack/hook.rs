@@ -3,7 +3,7 @@ pub(crate) mod context;
 #[cfg_attr(feature = "std", allow(unused_imports))]
 use alloc::vec::Vec;
 
-use error_stack::{
+use crate::error_stack::{
     fmt::{install_builtin_hooks, Hooks},
     Report,
 };
