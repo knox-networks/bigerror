@@ -1,7 +1,6 @@
 use std::{any, path::Path, time::Duration};
 
-use error_stack::Context;
-
+use crate::Context;
 use crate::{
     attachment::{self, FromTo, Unsupported},
     ty, AttachExt, Report, Reportable,

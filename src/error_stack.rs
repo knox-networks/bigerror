@@ -218,7 +218,7 @@
 //! # assert_eq!(report.request_ref::<String>().next().unwrap(), "could not read file \"test.txt\"");
 //! # assert!(report.contains::<ParseConfigError>());
 //! #
-//! # Report::set_color_mode(error_stack::fmt::ColorMode::Emphasis);
+//! # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
 //! # fn render(value: String) -> String {
 //! #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
 //! #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -483,9 +483,8 @@ mod result;
 
 mod context;
 mod error;
-pub mod fmt;
 #[cfg(any(feature = "std", feature = "hooks"))]
-mod hook;
+pub(crate) mod hook;
 #[cfg(feature = "serde")]
 mod serde;
 

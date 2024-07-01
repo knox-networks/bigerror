@@ -1,8 +1,12 @@
 #[cfg_attr(feature = "std", allow(unused_imports))]
 use alloc::{boxed::Box, vec, vec::Vec};
-use core::{error::Error, fmt, marker::PhantomData, mem, panic::Location};
+#[cfg(nightly)]
+use core::error::Error;
+use core::{fmt, marker::PhantomData, mem, panic::Location};
 #[cfg(feature = "std")]
 use std::backtrace::{Backtrace, BacktraceStatus};
+#[cfg(all(not(nightly), feature = "std"))]
+use std::error::Error;
 #[cfg(feature = "std")]
 use std::process::ExitCode;
 
@@ -33,12 +37,12 @@ use crate::error_stack::{
 /// the current context of the `Report` is printed, e.g. `println!("{report}")`. For the alternate
 /// [`Display`] output (`"{:#}"`), all [`Context`]s are printed. To print the full stack of
 /// [`Context`]s and attachments, use the [`Debug`] implementation (`"{:?}"`). To customize the
-/// output of the attachments in the [`Debug`] output, please see the [`error_stack::fmt`] module.
+/// output of the attachments in the [`Debug`] output, please see the [`crate::fmt`] module.
 ///
 /// Please see the examples below for more information.
 ///
 /// [`Display`]: fmt::Display
-/// [`error_stack::fmt`]: error_stack::fmt
+/// [`crate::fmt`]: crate::fmt
 ///
 /// ## Multiple Errors
 ///
@@ -158,7 +162,7 @@ use crate::error_stack::{
 ///     # let report = fake_main().unwrap_err();
 ///     # assert!(report.contains::<ConfigError>());
 ///     # assert_eq!(report.downcast_ref::<RuntimeError>(), Some(&RuntimeError::InvalidConfig(PathBuf::from("./path/to/config.file"))));
-///     # Report::set_color_mode(error_stack::fmt::ColorMode::Emphasis);
+///     # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
 ///     # #[cfg(nightly)]
 ///     # fn render(value: String) -> String {
 ///     #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
@@ -235,7 +239,6 @@ use crate::error_stack::{
 /// # }
 /// ```
 #[must_use]
-#[allow(clippy::field_scoped_visibility_modifiers)]
 pub struct Report<C> {
     // The vector is boxed as this implies a memory footprint equal to a single pointer size
     // instead of three pointer sizes. Even for small `Result::Ok` variants, the `Result` would
@@ -280,7 +283,7 @@ impl<C> Report<C> {
             .is_none()
             .then(Backtrace::capture);
 
-        #[cfg(all(rust_1_65, not(nightly), feature = "std"))]
+        #[cfg(all(not(nightly), feature = "std"))]
         let backtrace = Some(Backtrace::capture());
 
         #[cfg(all(nightly, feature = "spantrace"))]
@@ -302,7 +305,7 @@ impl<C> Report<C> {
             report = report.attach(*location);
         }
 
-        #[cfg(all(rust_1_65, feature = "std"))]
+        #[cfg(all(not(nightly), feature = "std"))]
         if let Some(backtrace) =
             backtrace.filter(|bt| matches!(bt.status(), BacktraceStatus::Captured))
         {

@@ -40,7 +40,7 @@ pub mod __private {
             }
         }
         impl<T> ContextTag for &T where T: ?Sized + Context {}
-        use error_stack::{Context, Report};
+        use crate::error_stack::{Context, Report};
 
         pub struct Reporter;
         impl Reporter {
@@ -125,7 +125,7 @@ pub mod __private {
 #[macro_export]
 macro_rules! report {
     ($err:expr $(,)?) => {{
-        use $error_stack::__private::*;
+        use $crate::error_stack::__private::*;
         let error = $err;
         (&error).__kind().report(error)
     }};
@@ -193,7 +193,7 @@ macro_rules! report {
 #[macro_export]
 macro_rules! bail {
     ($err:expr $(,)?) => {{
-        return $error_stack::Result::Err($error_stack::report!($err));
+        return $crate::error_stack::Result::Err($crate::report!($err));
     }};
 }
 
@@ -247,7 +247,7 @@ macro_rules! bail {
 macro_rules! ensure {
     ($cond:expr, $err:expr $(,)?) => {{
         if !bool::from($cond) {
-            $error_stack::bail!($err)
+            $crate::bail!($err)
         }
     }};
 }

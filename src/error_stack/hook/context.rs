@@ -70,33 +70,33 @@ macro_rules! impl_hook_context {
 $(#[$meta])*
 #[cfg_attr(not(doc), repr(transparent))]
 $vis struct HookContext<T> {
-    inner: $error_stack::hook::context::Inner<$extra>,
+    inner: $crate::error_stack::hook::context::Inner<$extra>,
     _marker: core::marker::PhantomData<fn(&T)>,
 }
 
 impl HookContext<()> {
     pub(crate) fn new(extra: $extra) -> Self {
         Self {
-            inner: $error_stack::hook::context::Inner::new(extra),
+            inner: $crate::error_stack::hook::context::Inner::new(extra),
             _marker: core::marker::PhantomData,
         }
     }
 }
 
 impl<T> HookContext<T> {
-    pub(crate) const fn inner(&self) -> &$error_stack::hook::context::Inner<$extra> {
+    pub(crate) const fn inner(&self) -> &$crate::error_stack::hook::context::Inner<$extra> {
         &self.inner
     }
 
-    pub(crate) fn inner_mut(&mut self) -> &mut $error_stack::hook::context::Inner<$extra> {
+    pub(crate) fn inner_mut(&mut self) -> &mut $crate::error_stack::hook::context::Inner<$extra> {
         &mut self.inner
     }
 
-    fn storage(&self) -> &$error_stack::hook::context::Storage {
+    fn storage(&self) -> &$crate::error_stack::hook::context::Storage {
         self.inner().storage()
     }
 
-    fn storage_mut(&mut self) -> &mut $error_stack::hook::context::Storage {
+    fn storage_mut(&mut self) -> &mut $crate::error_stack::hook::context::Storage {
         self.inner_mut().storage_mut()
     }
 }
@@ -144,7 +144,7 @@ impl<T> HookContext<T> {
     ///     .attach(Warning("disk nearly full"))
     ///     .attach(Error("cannot resolve example.com: unknown host"));
     ///
-    /// # Report::set_color_mode(error_stack::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -254,7 +254,7 @@ impl<T: 'static> HookContext<T> {
     ///     .attach(Suggestion("use a file you can read next time!"))
     ///     .attach(Suggestion("don't press any random keys!"));
     ///
-    /// # Report::set_color_mode(error_stack::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -277,12 +277,12 @@ impl<T: 'static> HookContext<T> {
     ///
     /// [`Debug`]: core::fmt::Debug
     pub fn increment_counter(&mut self) -> isize {
-        let counter = self.get_mut::<$error_stack::hook::context::Counter>();
+        let counter = self.get_mut::<$crate::error_stack::hook::context::Counter>();
 
         match counter {
             None => {
                 // if the counter hasn't been set yet, default to `0`
-                self.insert($error_stack::hook::context::Counter::new(0));
+                self.insert($crate::error_stack::hook::context::Counter::new(0));
 
                 0
             }
@@ -319,7 +319,7 @@ impl<T: 'static> HookContext<T> {
     ///     .attach(Suggestion("use a file you can read next time!"))
     ///     .attach(Suggestion("don't press any random keys!"));
     ///
-    /// # Report::set_color_mode(error_stack::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -340,14 +340,14 @@ impl<T: 'static> HookContext<T> {
     #[doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/snapshots/doc/fmt__hookcontext_decrement.snap"))]
     /// </pre>
     pub fn decrement_counter(&mut self) -> isize {
-        let counter = self.get_mut::<$error_stack::hook::context::Counter>();
+        let counter = self.get_mut::<$crate::error_stack::hook::context::Counter>();
 
         match counter {
             None => {
                 // given that increment starts with `0` (which is therefore the implicit default
                 // value) decrementing the default value results in `-1`,
                 // which is why we output that value.
-                self.insert($error_stack::hook::context::Counter::new(-1));
+                self.insert($crate::error_stack::hook::context::Counter::new(-1));
 
                 -1
             }

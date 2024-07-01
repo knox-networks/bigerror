@@ -3,7 +3,7 @@ pub(crate) mod context;
 #[cfg_attr(feature = "std", allow(unused_imports))]
 use alloc::vec::Vec;
 
-use crate::error_stack::{
+use crate::{
     fmt::{install_builtin_hooks, Hooks},
     Report,
 };
@@ -46,7 +46,7 @@ impl Report<()> {
     /// let report =
     ///     report!(Error::from(ErrorKind::InvalidInput)).attach(Suggestion("oh no, try again"));
     ///
-    /// # Report::set_color_mode(error_stack::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -120,7 +120,7 @@ impl Report<()> {
     ///
     /// let report = report!(UserError {code: ErrorCode(420)});
     ///
-    /// # Report::set_color_mode(error_stack::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -167,7 +167,7 @@ impl Report<()> {
     ///
     /// let report = error_stack::report!(Error::from(ErrorKind::InvalidInput));
     ///
-    /// # error_stack::Report::set_color_mode(error_stack::fmt::ColorMode::Emphasis);
+    /// # error_stack::Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -194,7 +194,7 @@ impl Report<()> {
     /// [`Error::provide`]: std::error::Error::provide
     #[cfg(any(feature = "std", feature = "hooks"))]
     pub fn install_debug_hook<T: Send + Sync + 'static>(
-        hook: impl Fn(&T, &mut error_stack::fmt::HookContext<T>) + Send + Sync + 'static,
+        hook: impl Fn(&T, &mut crate::fmt::HookContext<T>) + Send + Sync + 'static,
     ) {
         install_builtin_hooks();
 

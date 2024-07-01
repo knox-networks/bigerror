@@ -2,7 +2,7 @@ use std::{any, fmt, time::Duration};
 
 use tracing::error;
 
-pub use error_stack::{self, Context, Report, ResultExt};
+pub use crate::{Context, Report, ResultExt};
 pub use thiserror;
 
 use crate::reportable;

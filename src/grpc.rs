@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use error_stack::{iter::Frames, AttachmentKind, Context, FrameKind, Report};
+use crate::{iter::Frames, AttachmentKind, Context, FrameKind, Report};
 use tonic::{Code, Status};
 use tonic_types::{ErrorDetails, StatusExt};
 

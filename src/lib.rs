@@ -19,17 +19,19 @@ extern crate alloc;
 pub mod attachment;
 pub mod context;
 pub mod error_stack;
+pub mod fmt;
 #[cfg(feature = "grpc")]
 pub mod grpc;
 
 pub use attachment::{Expectation, Field, Index, KeyValue, Type};
 pub use context::*;
 
+use crate::fmt::ColorMode;
 use attachment::{Dbg, Debug, Display};
-use error_stack::fmt::ColorMode;
-use std::fmt;
 use tracing::{debug, error, info, trace, warn, Level};
 
+pub use error_stack::iter;
+pub use error_stack::{AttachmentKind, Frame, FrameKind, FutureExt};
 pub use error_stack::{Context, Report, ResultExt};
 pub use thiserror;
 
@@ -341,27 +343,27 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
 // in a functional matter
 pub trait LogError<T, E>
 where
-    E: fmt::Debug,
+    E: std::fmt::Debug,
 {
     // swallows and logs error
     fn log_err(self);
     // swallows and logs error with attachment
     fn log_attached_err<A>(self, attachment: A)
     where
-        A: fmt::Debug + Send + Sync + 'static;
+        A: std::fmt::Debug + Send + Sync + 'static;
     // logs error and forwards
     fn and_log_err(self) -> Result<T, E>;
     fn and_log(self, level: Level) -> Result<T, E>;
     // logs error and forwards with attachment
     fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
     where
-        A: fmt::Debug + Send + Sync + 'static;
+        A: std::fmt::Debug + Send + Sync + 'static;
     fn on_err(self, op: impl FnOnce()) -> Result<T, E>;
 }
 
 impl<T, E> LogError<T, E> for Result<T, E>
 where
-    E: fmt::Debug,
+    E: std::fmt::Debug,
 {
     #[inline]
     #[track_caller]
@@ -375,7 +377,7 @@ where
     #[track_caller]
     fn log_attached_err<A>(self, attachment: A)
     where
-        A: fmt::Debug + Send + Sync + 'static,
+        A: std::fmt::Debug + Send + Sync + 'static,
     {
         if let Err(e) = self {
             error!(err = ?e, "{attachment:?}");
@@ -409,7 +411,7 @@ where
     #[track_caller]
     fn and_attached_err<A>(self, attachment: A) -> Self
     where
-        A: fmt::Debug + Send + Sync + 'static,
+        A: std::fmt::Debug + Send + Sync + 'static,
     {
         if let Err(e) = &self {
             error!(err = ?e, "{attachment:?}");
