@@ -1,7 +1,9 @@
 use std::{any, path::Path, time::Duration};
 
 use crate::{
-    attachment::{self, FromTo, Unsupported},
+    attachment::{
+        FromTo, Unsupported, {self},
+    },
     ty, AttachExt, Context, Report, Reportable,
 };
 

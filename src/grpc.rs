@@ -1,10 +1,11 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{iter::Frames, AttachmentKind, Context, FrameKind, Report};
+use crate::{
+    attachment, iter::Frames, AttachExt, AttachmentKind, Context, ConversionError, FrameKind,
+    OptionReport, ParseError, Report, ReportAs,
+};
 use tonic::{Code, Status};
 use tonic_types::{ErrorDetails, StatusExt};
-
-use crate::{attachment, AttachExt, ConversionError, OptionReport, ParseError, ReportAs};
 
 /// Dentotes the start of a `google.rpc.DebugInfo` message start
 /// https://github.com/googleapis/googleapis/blob/f36c650/google/rpc/error_details.proto#L97-L103

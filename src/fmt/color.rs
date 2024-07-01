@@ -1,4 +1,6 @@
-use core::fmt::{self, Display, Formatter};
+use core::fmt::{
+    Display, Formatter, {self},
+};
 
 use crate::{
     fmt::r#override::{AtomicOverride, AtomicPreference},
