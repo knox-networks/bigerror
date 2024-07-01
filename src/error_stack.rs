@@ -116,9 +116,9 @@
 //! use bigerror::Report;
 //!
 //! // Note: For demonstration purposes this example does not use `error_stack::Result`.
-//! // As can be seen, it's possible to implicitly convert `io::Error` to `Report<io::Error>`
+//! // As can be seen, one must explicitly convert `io::Error` to `Report<io::Error>`
 //! fn read_file(path: impl AsRef<Path>) -> Result<String, Report<io::Error>> {
-//!     let content = fs::read_to_string(path)?;
+//!     let content = fs::read_to_string(path).map_err(Report::new)?;
 //!
 //!     # const _: &str = stringify! {
 //!     ...
@@ -264,7 +264,7 @@
 //!
 //! ```rust
 //! # use std::{fs, path::Path};
-//! # use bigerror::Report;
+//! # use bigerror::{Report, report};
 //! # pub type Config = String;
 //!
 //! fn parse_configs(paths: &[impl AsRef<Path>]) -> Result<Vec<Config>, Report<std::io::Error>> {
@@ -280,9 +280,9 @@
 //!             }
 //!             Err(err) => {
 //!                 if let Some(error) = error.as_mut() {
-//!                     error.extend_one(err.into());
+//!                     error.extend_one(report!(err));
 //!                 } else {
-//!                     error = Some(err.into());
+//!                     error = Some(report!(err));
 //!                 }
 //!             }
 //!         }
@@ -498,10 +498,7 @@ pub use self::{
 };
 #[doc(inline)]
 #[allow(deprecated)]
-pub use self::{
-    future::FutureExt,
-    result::{IntoReport, ResultExt},
-};
+pub use self::{future::FutureExt, result::ResultExt};
 
 #[cfg(test)]
 #[allow(dead_code)]

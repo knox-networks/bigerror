@@ -4,7 +4,7 @@ use core::fmt;
 #[cfg(all(not(nightly), feature = "std"))]
 use std::error::Error;
 
-use crate::error_stack::Report;
+use crate::{error_stack::Report, DecodeError, IntoContext, Reportable, ResultExt};
 
 /// Defines the current context of a [`Report`].
 ///
@@ -41,7 +41,7 @@ use crate::error_stack::Report;
 ///
 /// pub fn read_file(path: &str) -> Result<String, io::Error> {
 ///     // Creates a `Report` from `io::Error`, the current context is `io::Error`
-///     fs::read_to_string(path).map_err(Report::from)
+///     fs::read_to_string(path).map_err(Report::new)
 /// }
 ///
 /// pub fn parse_config(path: &str) -> Result<Config, ConfigError> {
@@ -64,16 +64,16 @@ pub trait Context: fmt::Display + fmt::Debug + Send + Sync + 'static {
     fn provide<'a>(&'a self, request: &mut Request<'a>) {}
 }
 
-impl<C> From<C> for Report<C>
-where
-    C: Context,
-{
-    #[track_caller]
-    #[inline]
-    fn from(context: C) -> Self {
-        Self::new(context)
-    }
-}
+// impl<C> From<C> for Report<C>
+// where
+//     C: Context,
+// {
+//     #[track_caller]
+//     #[inline]
+//     fn from(context: C) -> Self {
+//         Self::new(context)
+//     }
+// }
 
 impl<C: Error + Send + Sync + 'static> Context for C {
     #[cfg(nightly)]
@@ -81,3 +81,15 @@ impl<C: Error + Send + Sync + 'static> Context for C {
         Error::provide(self, request);
     }
 }
+
+// impl<C, C2> From<C> for Report<C2>
+// where
+//     C: IntoContext + ResultExt,
+//     C2: Reportable,
+// {
+//     #[track_caller]
+//     #[inline]
+//     fn from(report: C) -> Self {
+//         report.into_ctx()
+//     }
+// }

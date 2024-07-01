@@ -537,7 +537,7 @@ impl<C> Report<C> {
     ///     # const _: &str = stringify! {
     ///     ...
     ///     # };
-    ///     # fs::read_to_string(path.as_ref()).map_err(Report::from)
+    ///     # fs::read_to_string(path.as_ref()).map_err(Report::new)
     /// }
     ///
     /// let report = read_file("test.txt").unwrap_err();
@@ -564,7 +564,7 @@ impl<C> Report<C> {
     ///     # const _: &str = stringify! {
     ///     ...
     ///     # };
-    ///     # fs::read_to_string(path.as_ref()).map_err(Report::from)
+    ///     # fs::read_to_string(path.as_ref()).map_err(Report::new)
     /// }
     ///
     /// let report = read_file("test.txt").unwrap_err();
@@ -605,7 +605,7 @@ impl<C> Report<C> {
     ///     # const _: &str = stringify! {
     ///     ...
     ///     # };
-    ///     # fs::read_to_string(path.as_ref()).map_err(Report::from)
+    ///     # fs::read_to_string(path.as_ref()).map_err(Report::new)
     /// }
     ///
     /// let report = read_file("test.txt").unwrap_err();
