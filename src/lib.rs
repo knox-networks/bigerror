@@ -30,9 +30,9 @@ use crate::fmt::ColorMode;
 use attachment::{Dbg, Debug, Display};
 use tracing::{debug, error, info, trace, warn, Level};
 
-pub use error_stack::iter;
-pub use error_stack::{AttachmentKind, Frame, FrameKind, FutureExt};
-pub use error_stack::{Context, Report, ResultExt};
+pub use error_stack::{
+    iter, AttachmentKind, Context, Frame, FrameKind, FutureExt, Report, ResultExt,
+};
 pub use thiserror;
 
 // TODO we'll have to do a builder pattern here at

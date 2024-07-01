@@ -9,8 +9,10 @@ use core::{any::TypeId, mem};
 
 pub(crate) use default::install_builtin_hooks;
 
-use crate::error_stack::{self};
-use crate::fmt::{charset::Charset, ColorMode, Frame};
+use crate::{
+    error_stack::{self},
+    fmt::{charset::Charset, ColorMode, Frame},
+};
 
 pub(crate) struct Format {
     alternate: bool,

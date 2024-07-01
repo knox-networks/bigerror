@@ -1,7 +1,9 @@
 use core::fmt::{self, Display, Formatter};
 
-use crate::fmt::r#override::{AtomicOverride, AtomicPreference};
-use crate::Report;
+use crate::{
+    fmt::r#override::{AtomicOverride, AtomicPreference},
+    Report,
+};
 
 /// The available modes of color support
 ///
