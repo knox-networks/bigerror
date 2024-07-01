@@ -14,8 +14,8 @@ use std::process::ExitCode;
 use tracing_error::{SpanTrace, SpanTraceStatus};
 
 #[cfg(nightly)]
-use crate::error_stack::iter::{RequestRef, RequestValue};
-use crate::error_stack::{
+use crate::iter::{RequestRef, RequestValue};
+use crate::{
     iter::{Frames, FramesMut},
     Context, Frame,
 };
@@ -83,7 +83,7 @@ use crate::error_stack::{
 /// ## Provide a context for an error
 ///
 /// ```rust
-/// use bigerror::{ResultExt, Result};
+/// use bigerror::{ResultExt, error_stack::Result};
 ///
 /// # #[allow(dead_code)]
 /// # fn fake_main() -> Result<String, std::io::Error> {
@@ -207,7 +207,7 @@ use crate::error_stack::{
 /// ## Get the attached [`Backtrace`] and [`SpanTrace`]:
 ///
 /// ```rust,should_panic
-/// use bigerror::{ResultExt, Result};
+/// use bigerror::{ResultExt, error_stack::Result};
 ///
 /// # #[allow(unused_variables)]
 /// # fn main() -> Result<(), std::io::Error> {

@@ -18,7 +18,7 @@ use crate::error_stack::Report;
 /// ```rust
 /// use std::{fmt, fs, io};
 ///
-/// use bigerror::{Context, Result, ResultExt, Report};
+/// use bigerror::{Context, error_stack::Result, Report, ResultExt};
 ///
 /// # type Config = ();
 /// #[derive(Debug)]

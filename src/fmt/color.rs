@@ -76,7 +76,7 @@ impl Report<()> {
     /// use owo_colors::OwoColorize;
     ///
     /// use bigerror::{report, Report};
-    /// use crate::fmt::ColorMode;
+    /// use bigerror::fmt::ColorMode;
     ///
     /// struct Suggestion(&'static str);
     ///

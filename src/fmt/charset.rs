@@ -64,7 +64,7 @@ impl Report<()> {
     /// use std::io::{Error, ErrorKind};
     ///
     /// use bigerror::{report, Report};
-    /// use crate::fmt::{Charset};
+    /// use bigerror::fmt::{Charset};
     ///
     /// struct Suggestion(&'static str);
     ///

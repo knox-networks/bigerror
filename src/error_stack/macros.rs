@@ -40,7 +40,7 @@ pub mod __private {
             }
         }
         impl<T> ContextTag for &T where T: ?Sized + Context {}
-        use crate::error_stack::{Context, Report};
+        use crate::{Context, Report};
 
         pub struct Reporter;
         impl Reporter {
@@ -69,8 +69,8 @@ pub mod __private {
 /// The parameters may either be [`Context`] or a [`Report`]. The returned [`Report`] will use the
 /// the provided type as context.
 ///
-/// [`Report`]: error_stack::Report
-/// [`Context`]: error_stack::Context
+/// [`Report`]: bigerror::Report
+/// [`Context`]: bigerror::Context
 /// [`Error`]: core::error::Error
 ///
 /// # Examples
@@ -80,9 +80,9 @@ pub mod __private {
 /// ```rust
 /// use std::fs;
 ///
-/// use bigerror::report;
+/// use bigerror::{report, error_stack::Result};
 ///
-/// # fn wrapper() -> error_stack::Result<(), impl core::fmt::Debug> {
+/// # fn wrapper() -> Result<(), impl core::fmt::Debug> {
 /// match fs::read_to_string("/path/to/file") {
 ///     Ok(content) => println!("file contents: {content}"),
 ///     Err(err) => return Err(report!(err)),
@@ -135,7 +135,7 @@ macro_rules! report {
 ///
 /// Shorthand for `return `Err`(`[`report!(...)`]`)`
 ///
-/// [`Report`]: error_stack::Report
+/// [`Report`]: bigerror::Report
 /// [`report!(...)`]: report
 ///
 /// # Examples
@@ -147,8 +147,8 @@ macro_rules! report {
 /// ```
 /// use std::fs;
 ///
-/// use bigerror::bail;
-/// # fn wrapper() -> error_stack::Result<(), impl core::fmt::Debug> {
+/// use bigerror::{bail, error_stack::Result};
+/// # fn wrapper() -> Result<(), impl core::fmt::Debug> {
 /// match fs::read_to_string("/path/to/file") {
 ///     Ok(content) => println!("file contents: {content}"),
 ///     Err(err) => bail!(err),
@@ -159,7 +159,7 @@ macro_rules! report {
 ///
 /// Create a [`Report`] from [`Context`]:
 ///
-/// [`Context`]: error_stack::Context
+/// [`Context`]: bigerror::Context
 ///
 /// ```rust
 /// # fn has_permission(_: &u32, _: &u32) -> bool { true }
@@ -201,15 +201,15 @@ macro_rules! bail {
 ///
 /// Shorthand for `if !$cond { `[`bail!(...)`]`) }`
 ///
-/// [`Report`]: error_stack::Report
+/// [`Report`]: bigerror::Report
 /// [`bail!(...)`]: bail
 ///
 /// # Examples
 ///
 /// Create a [`Report`] from [`Context`]:
 ///
-/// [`Report`]: error_stack::Report
-/// [`Context`]: error_stack::Context
+/// [`Report`]: bigerror::Report
+/// [`Context`]: bigerror::Context
 ///
 /// ```rust
 /// # fn has_permission(_: &u32, _: &u32) -> bool { true }

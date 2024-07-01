@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::error_stack::{Context, Report};
+use crate::{Context, Report};
 
 /// [`Result`](std::result::Result)`<T, `[`Report<C>`](Report)`>`
 ///
@@ -21,8 +21,8 @@ use crate::error_stack::{Context, Report};
 /// # impl core::fmt::Display for AccessError {
 /// #    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
 /// # }
-/// # impl error_stack::Context for AccessError {}
-/// use bigerror::{ensure, Result};
+/// # impl bigerror::Context for AccessError {}
+/// use bigerror::{ensure, error_stack::Result};
 ///
 /// fn main() -> Result<(), AccessError> {
 ///     let user = get_user()?;

@@ -46,7 +46,7 @@ impl Report<()> {
     /// let report =
     ///     report!(Error::from(ErrorKind::InvalidInput)).attach(Suggestion("oh no, try again"));
     ///
-    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -120,7 +120,7 @@ impl Report<()> {
     ///
     /// let report = report!(UserError {code: ErrorCode(420)});
     ///
-    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -161,13 +161,13 @@ impl Report<()> {
     ///     panic::Location,
     /// };
     ///
-    /// error_stack::Report::install_debug_hook::<Location>(|_location, _context| {
+    /// bigerror::Report::install_debug_hook::<Location>(|_location, _context| {
     ///     // Intentionally left empty so nothing will be printed
     /// });
     ///
-    /// let report = error_stack::report!(Error::from(ErrorKind::InvalidInput));
+    /// let report = bigerror::report!(Error::from(ErrorKind::InvalidInput));
     ///
-    /// # error_stack::Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+    /// # bigerror::Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();

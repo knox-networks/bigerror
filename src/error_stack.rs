@@ -33,7 +33,7 @@
 //!
 //! ```rust
 //! # #![allow(dead_code)]
-//! use bigerror::ResultExt;
+//! use bigerror::{ResultExt, error_stack::Result};
 //! // using `thiserror` is not neccessary, but convenient
 //! use thiserror::Error;
 //!
@@ -47,14 +47,14 @@
 //!     Trivial,
 //! }
 //!
-//! type AppResult<T> = error_stack::Result<T, AppError>;
+//! type AppResult<T> = Result<T, AppError>;
 //!
 //! // Errors can also be a plain `struct`, somewhat like in `anyhow`.
 //! #[derive(Error, Debug)]
 //! #[error("logic error")]
 //! struct LogicError;
 //!
-//! type LogicResult<T> = error_stack::Result<T, LogicError>;
+//! type LogicResult<T> = Result<T, LogicError>;
 //!
 //! fn do_logic() -> LogicResult<()> {
 //!     Ok(())
@@ -85,8 +85,8 @@
 //! # impl core::fmt::Display for AccessError {
 //! #    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
 //! # }
-//! # impl error_stack::Context for AccessError {}
-//! use bigerror::{ensure, Result};
+//! # impl bigerror::Context for AccessError {}
+//! use bigerror::{ensure, error_stack::Result};
 //!
 //! fn main() -> Result<(), AccessError> {
 //!     let user = get_user()?;
@@ -146,7 +146,7 @@
 //!
 //! ```rust
 //! # use std::{fmt, fs, io, path::Path};
-//! use bigerror::{Context, Result, ResultExt};
+//! use bigerror::{Context, ResultExt, error_stack::Result};
 //! # pub type Config = String;
 //!
 //! #[derive(Debug)]
@@ -349,7 +349,7 @@
 //!
 //! ```rust
 //! # #![cfg_attr(not(nightly), allow(unused_variables, dead_code))]
-//! # use bigerror::Result;
+//! # use bigerror::error_stack::Result;
 //! # struct Suggestion(&'static str);
 //! # fn parse_config(_: &str) -> Result<(), std::io::Error> { Ok(()) }
 //! fn main() {

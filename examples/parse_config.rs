@@ -47,5 +47,9 @@ fn main() {
         for suggestion in report.request_ref::<Suggestion>() {
             eprintln!("Suggestion: {}", suggestion.0);
         }
+        #[cfg(not(nightly))]
+        while let Some(suggestion) = report.downcast_ref::<Suggestion>() {
+            eprintln!("Suggestion: {}", suggestion.0);
+        }
     }
 }
