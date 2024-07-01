@@ -5,7 +5,7 @@ extern crate alloc;
 use core::fmt::{Display, Formatter, Write};
 
 mod common;
-use error_stack::{report, Context, Report};
+use bigerror::{report, Context, Report};
 
 #[derive(Debug)]
 struct Char(char);

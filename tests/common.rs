@@ -22,7 +22,7 @@ use core::{
 #[cfg(all(rust_1_65, feature = "std"))]
 use std::backtrace::Backtrace;
 
-use error_stack::{AttachmentKind, Context, Frame, FrameKind, Report, Result};
+use bigerror::{error_stack::Result, AttachmentKind, Context, Frame, FrameKind, Report};
 #[allow(unused_imports)]
 use once_cell::sync::Lazy;
 #[cfg(feature = "spantrace")]

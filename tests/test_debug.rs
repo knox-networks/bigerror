@@ -5,9 +5,9 @@ mod common;
 
 #[allow(clippy::wildcard_imports)]
 use common::*;
-use error_stack::fmt::{Charset, ColorMode};
+use bigerror::fmt::{Charset, ColorMode};
 #[allow(unused_imports)]
-use error_stack::Report;
+use bigerror::Report;
 use insta::assert_snapshot;
 #[cfg(feature = "spantrace")]
 use tracing_error::ErrorLayer;

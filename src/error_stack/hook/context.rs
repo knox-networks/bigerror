@@ -120,7 +120,7 @@ impl<T> HookContext<T> {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io::ErrorKind;
     ///
-    /// use error_stack::Report;
+    /// use bigerror::Report;
     ///
     /// struct Warning(&'static str);
     /// struct Error(&'static str);
@@ -241,7 +241,7 @@ impl<T: 'static> HookContext<T> {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io::ErrorKind;
     ///
-    /// use error_stack::Report;
+    /// use bigerror::Report;
     ///
     /// struct Suggestion(&'static str);
     ///
@@ -306,7 +306,7 @@ impl<T: 'static> HookContext<T> {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io::ErrorKind;
     ///
-    /// use error_stack::Report;
+    /// use bigerror::Report;
     ///
     /// struct Suggestion(&'static str);
     ///

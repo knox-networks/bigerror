@@ -4,7 +4,7 @@ mod common;
 
 #[allow(clippy::wildcard_imports)]
 use common::*;
-use error_stack::{bail, ensure, report};
+use bigerror::{bail, ensure, report};
 
 #[test]
 fn report() {

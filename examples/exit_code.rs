@@ -2,7 +2,7 @@
 
 use std::process::{ExitCode, Termination};
 
-use error_stack::{Context, Report};
+use bigerror::{Context, Report};
 
 #[derive(Debug)]
 struct CustomError;

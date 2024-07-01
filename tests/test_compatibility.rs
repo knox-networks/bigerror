@@ -10,9 +10,9 @@ use core::error;
 
 #[allow(clippy::wildcard_imports)]
 use common::*;
-use error_stack::IntoReportCompat;
+use bigerror::IntoReportCompat;
 #[cfg(all(nightly, feature = "std"))]
-use error_stack::Report;
+use bigerror::Report;
 
 #[test]
 #[cfg(any(nightly, feature = "std"))]

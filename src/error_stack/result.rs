@@ -22,7 +22,7 @@ use crate::error_stack::{Context, Report};
 /// #    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
 /// # }
 /// # impl error_stack::Context for AccessError {}
-/// use error_stack::{ensure, Result};
+/// use bigerror::{ensure, Result};
 ///
 /// fn main() -> Result<(), AccessError> {
 ///     let user = get_user()?;

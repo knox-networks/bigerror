@@ -44,7 +44,7 @@
 //! # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
 //! use core::fmt::{Display, Formatter};
 //! use std::io::{Error, ErrorKind};
-//! use error_stack::Report;
+//! use bigerror::Report;
 //!
 //! #[derive(Debug)]
 //! struct ErrorCode(u64);

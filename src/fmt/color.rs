@@ -75,7 +75,7 @@ impl Report<()> {
     /// use std::io::{Error, ErrorKind};
     /// use owo_colors::OwoColorize;
     ///
-    /// use error_stack::{report, Report};
+    /// use bigerror::{report, Report};
     /// use crate::fmt::ColorMode;
     ///
     /// struct Suggestion(&'static str);

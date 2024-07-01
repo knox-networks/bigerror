@@ -33,7 +33,7 @@
 //!
 //! ```rust
 //! # #![allow(dead_code)]
-//! use error_stack::ResultExt;
+//! use bigerror::ResultExt;
 //! // using `thiserror` is not neccessary, but convenient
 //! use thiserror::Error;
 //!
@@ -86,7 +86,7 @@
 //! #    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
 //! # }
 //! # impl error_stack::Context for AccessError {}
-//! use error_stack::{ensure, Result};
+//! use bigerror::{ensure, Result};
 //!
 //! fn main() -> Result<(), AccessError> {
 //!     let user = get_user()?;
@@ -113,7 +113,7 @@
 //! ```rust
 //! use std::{fs, io, path::Path};
 //!
-//! use error_stack::Report;
+//! use bigerror::Report;
 //!
 //! // Note: For demonstration purposes this example does not use `error_stack::Result`.
 //! // As can be seen, it's possible to implicitly convert `io::Error` to `Report<io::Error>`
@@ -146,7 +146,7 @@
 //!
 //! ```rust
 //! # use std::{fmt, fs, io, path::Path};
-//! use error_stack::{Context, Result, ResultExt};
+//! use bigerror::{Context, Result, ResultExt};
 //! # pub type Config = String;
 //!
 //! #[derive(Debug)]
@@ -186,7 +186,7 @@
 //! # // we only test the snapshot on nightly, therefore report is unused (so is render)
 //! # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
 //! # use std::{fs, path::Path};
-//! # use error_stack::{Context, Report, ResultExt};
+//! # use bigerror::{Context, Report, ResultExt};
 //! # pub type Config = String;
 //! # #[derive(Debug)] struct ParseConfigError;
 //! # impl ParseConfigError { pub fn new() -> Self { Self } }
@@ -218,7 +218,7 @@
 //! # assert_eq!(report.request_ref::<String>().next().unwrap(), "could not read file \"test.txt\"");
 //! # assert!(report.contains::<ParseConfigError>());
 //! #
-//! # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+//! # Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
 //! # fn render(value: String) -> String {
 //! #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
 //! #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -264,7 +264,7 @@
 //!
 //! ```rust
 //! # use std::{fs, path::Path};
-//! # use error_stack::Report;
+//! # use bigerror::Report;
 //! # pub type Config = String;
 //!
 //! fn parse_configs(paths: &[impl AsRef<Path>]) -> Result<Vec<Config>, Report<std::io::Error>> {
@@ -349,7 +349,7 @@
 //!
 //! ```rust
 //! # #![cfg_attr(not(nightly), allow(unused_variables, dead_code))]
-//! # use error_stack::Result;
+//! # use bigerror::Result;
 //! # struct Suggestion(&'static str);
 //! # fn parse_config(_: &str) -> Result<(), std::io::Error> { Ok(()) }
 //! fn main() {

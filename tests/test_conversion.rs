@@ -3,7 +3,7 @@
 
 use std::io;
 
-use error_stack::{Report, ResultExt};
+use bigerror::{Report, ResultExt};
 
 fn io_error() -> Result<(), io::Error> {
     Err(io::Error::from(io::ErrorKind::Other))
@@ -23,7 +23,7 @@ fn into_report() {
     assert_eq!(report.current_context().kind(), io::ErrorKind::Other);
 }
 
-fn returning_boxed_error() -> Result<(), Box<dyn core::error::Error + Send + Sync>> {
+fn returning_boxed_error() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     io_error().attach(10_u32)?;
     Ok(())
 }

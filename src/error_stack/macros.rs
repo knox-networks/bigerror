@@ -80,7 +80,7 @@ pub mod __private {
 /// ```rust
 /// use std::fs;
 ///
-/// use error_stack::report;
+/// use bigerror::report;
 ///
 /// # fn wrapper() -> error_stack::Result<(), impl core::fmt::Debug> {
 /// match fs::read_to_string("/path/to/file") {
@@ -101,7 +101,7 @@ pub mod __private {
 /// # let resource = 0;
 /// use core::fmt;
 ///
-/// use error_stack::{report, Context};
+/// use bigerror::{report, Context};
 ///
 /// #[derive(Debug)]
 /// # #[allow(dead_code)]
@@ -147,7 +147,7 @@ macro_rules! report {
 /// ```
 /// use std::fs;
 ///
-/// use error_stack::bail;
+/// use bigerror::bail;
 /// # fn wrapper() -> error_stack::Result<(), impl core::fmt::Debug> {
 /// match fs::read_to_string("/path/to/file") {
 ///     Ok(content) => println!("file contents: {content}"),
@@ -169,7 +169,7 @@ macro_rules! report {
 /// # let resource = 0;
 /// use core::fmt;
 ///
-/// use error_stack::{bail, Context};
+/// use bigerror::{bail, Context};
 ///
 /// #[derive(Debug)]
 /// # #[allow(dead_code)]
@@ -219,7 +219,7 @@ macro_rules! bail {
 /// # let resource = 0;
 /// # use core::fmt;
 ///
-/// use error_stack::{ensure, Context};
+/// use bigerror::{ensure, Context};
 ///
 /// #[derive(Debug)]
 /// # #[allow(dead_code)]

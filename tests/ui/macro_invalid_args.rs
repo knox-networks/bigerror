@@ -1,6 +1,6 @@
 use core::fmt;
 
-use error_stack::{bail, ensure, report, Context, Result};
+use bigerror::{bail, ensure, report, Context, Result};
 
 #[derive(Debug)]
 pub struct RootError;

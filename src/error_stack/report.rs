@@ -83,7 +83,7 @@ use crate::error_stack::{
 /// ## Provide a context for an error
 ///
 /// ```rust
-/// use error_stack::{ResultExt, Result};
+/// use bigerror::{ResultExt, Result};
 ///
 /// # #[allow(dead_code)]
 /// # fn fake_main() -> Result<String, std::io::Error> {
@@ -101,7 +101,7 @@ use crate::error_stack::{
 /// ```rust
 /// use std::{fmt, path::{Path, PathBuf}};
 ///
-/// use error_stack::{Context, Report, ResultExt};
+/// use bigerror::{Context, Report, ResultExt};
 ///
 /// #[derive(Debug)]
 /// # #[derive(PartialEq)]
@@ -162,7 +162,7 @@ use crate::error_stack::{
 ///     # let report = fake_main().unwrap_err();
 ///     # assert!(report.contains::<ConfigError>());
 ///     # assert_eq!(report.downcast_ref::<RuntimeError>(), Some(&RuntimeError::InvalidConfig(PathBuf::from("./path/to/config.file"))));
-///     # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+///     # Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
 ///     # #[cfg(nightly)]
 ///     # fn render(value: String) -> String {
 ///     #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
@@ -207,7 +207,7 @@ use crate::error_stack::{
 /// ## Get the attached [`Backtrace`] and [`SpanTrace`]:
 ///
 /// ```rust,should_panic
-/// use error_stack::{ResultExt, Result};
+/// use bigerror::{ResultExt, Result};
 ///
 /// # #[allow(unused_variables)]
 /// # fn main() -> Result<(), std::io::Error> {
@@ -334,7 +334,7 @@ impl<C> Report<C> {
     ///     path::Path,
     /// };
     ///
-    /// use error_stack::{Context, Report, ResultExt};
+    /// use bigerror::{Context, Report, ResultExt};
     ///
     /// #[derive(Debug)]
     /// struct IoError;
@@ -422,7 +422,7 @@ impl<C> Report<C> {
     /// use core::fmt;
     /// use std::fs;
     ///
-    /// use error_stack::ResultExt;
+    /// use bigerror::ResultExt;
     ///
     /// #[derive(Debug)]
     /// pub struct Suggestion(&'static str);
@@ -532,7 +532,7 @@ impl<C> Report<C> {
     ///
     /// ```rust
     /// # use std::{fs, io, path::Path};
-    /// # use error_stack::Report;
+    /// # use bigerror::Report;
     /// fn read_file(path: impl AsRef<Path>) -> Result<String, Report<io::Error>> {
     ///     # const _: &str = stringify! {
     ///     ...
@@ -557,7 +557,7 @@ impl<C> Report<C> {
     ///
     /// ```rust
     /// # use std::{fs, path::Path};
-    /// # use error_stack::Report;
+    /// # use bigerror::Report;
     /// use std::io;
     ///
     /// fn read_file(path: impl AsRef<Path>) -> Result<String, Report<io::Error>> {
@@ -598,7 +598,7 @@ impl<C> Report<C> {
     ///
     /// ```rust
     /// # use std::{fs, path::Path};
-    /// # use error_stack::Report;
+    /// # use bigerror::Report;
     /// use std::io;
     ///
     /// fn read_file(path: impl AsRef<Path>) -> Result<String, Report<io::Error>> {

@@ -72,7 +72,7 @@ crate::error_stack::hook::context::impl_hook_context! {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io::{Error, ErrorKind};
     ///
-    /// use error_stack::Report;
+    /// use bigerror::Report;
     ///
     /// struct Warning(&'static str);
     /// struct HttpResponseStatusCode(u64);
@@ -124,7 +124,7 @@ crate::error_stack::hook::context::impl_hook_context! {
     ///     .attach(HttpResponseStatusCode(501))
     ///     .attach(Suggestion("try better next time!"));
     ///
-    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -177,7 +177,7 @@ crate::error_stack::hook::context::impl_hook_context! {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io::ErrorKind;
     ///
-    /// use error_stack::Report;
+    /// use bigerror::Report;
     ///
     /// struct Computation(u64);
     ///
@@ -204,7 +204,7 @@ crate::error_stack::hook::context::impl_hook_context! {
     ///     .attach(Computation(2))
     ///     .attach(Computation(3));
     ///
-    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -264,7 +264,7 @@ impl<T> HookContext<T> {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io::ErrorKind;
     ///
-    /// use error_stack::Report;
+    /// use bigerror::Report;
     ///
     /// struct Error {
     ///     code: usize,
@@ -290,7 +290,7 @@ impl<T> HookContext<T> {
     ///         reason: "bad request - server cannot or will not process request",
     ///     });
     ///
-    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();
@@ -323,7 +323,7 @@ impl<T> HookContext<T> {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io;
     ///
-    /// use error_stack::Report;
+    /// use bigerror::Report;
     ///
     /// struct Suggestion(&'static str);
     ///
@@ -337,7 +337,7 @@ impl<T> HookContext<T> {
     /// let report = Report::new(io::Error::from(io::ErrorKind::InvalidInput))
     ///     .attach(Suggestion("try better next time"));
     ///
-    /// # Report::set_color_mode(crate::fmt::ColorMode::Emphasis);
+    /// # Report::set_color_mode(bigerror::fmt::ColorMode::Emphasis);
     /// # fn render(value: String) -> String {
     /// #     let backtrace = regex::Regex::new(r"backtrace no\. (\d+)\n(?:  .*\n)*  .*").unwrap();
     /// #     let backtrace_info = regex::Regex::new(r"backtrace( with (\d+) frames)? \((\d+)\)").unwrap();

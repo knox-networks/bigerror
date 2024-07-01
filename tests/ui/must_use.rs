@@ -2,7 +2,7 @@
 
 use core::fmt;
 
-use error_stack::{Context, Report};
+use bigerror::{Context, Report};
 
 #[derive(Debug)]
 pub struct RootError;

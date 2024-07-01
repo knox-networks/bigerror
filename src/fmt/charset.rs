@@ -63,7 +63,7 @@ impl Report<()> {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io::{Error, ErrorKind};
     ///
-    /// use error_stack::{report, Report};
+    /// use bigerror::{report, Report};
     /// use crate::fmt::{Charset};
     ///
     /// struct Suggestion(&'static str);

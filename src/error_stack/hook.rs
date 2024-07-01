@@ -33,7 +33,7 @@ impl Report<()> {
     /// # #![cfg_attr(not(nightly), allow(dead_code, unused_variables, unused_imports))]
     /// use std::io::{Error, ErrorKind};
     ///
-    /// use error_stack::{
+    /// use bigerror::{
     ///     report, Report,
     /// };
     ///
@@ -84,7 +84,7 @@ impl Report<()> {
     /// # mod nightly {
     /// use core::error::{Request, Error};
     /// use core::fmt::{Display, Formatter};
-    /// use error_stack::{Report, report};
+    /// use bigerror::{Report, report};
     ///
     /// struct Suggestion(&'static str);
     ///

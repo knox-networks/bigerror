@@ -26,7 +26,7 @@ The library enables building a `Report` around an error as it propagates:
 ```rust
 use core::fmt;
 
-use error_stack::{Context, Report, Result, ResultExt};
+use bigerror::{Context, Report, Result, ResultExt};
 
 #[derive(Debug)]
 struct ParseExperimentError;
