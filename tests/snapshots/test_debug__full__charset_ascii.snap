@@ -1,0 +1,16 @@
+---
+source: libs/error-stack/tests/test_debug.rs
+expression: "format!(\"{report:?}\")"
+---
+root error
+|-at libs/error-stack/tests/common.rs:9:5
+|-backtrace (1)
+|-span trace with 2 frames (1)
+
+========================================
+
+backtrace no. 1
+  [redacted]
+
+span trace No. 1
+  [redacted]

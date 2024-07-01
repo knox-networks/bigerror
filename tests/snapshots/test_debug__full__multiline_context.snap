@@ -1,0 +1,25 @@
+---
+source: libs/error-stack/tests/test_debug.rs
+expression: "format!(\"{report:#?}\")"
+---
+context B
+├╴at libs/error-stack/tests/test_debug.rs:320:14
+├╴printable C
+│
+├─▶ A multiline
+│   context that might have
+│   a bit more info
+│   ├╴at libs/error-stack/tests/test_debug.rs:317:14
+│   ├╴printable B
+│   ╰╴1 additional opaque attachment
+│
+╰─▶ A multiline
+    context that might have
+    a bit more info
+    ├╴at libs/error-stack/tests/test_debug.rs:316:22
+    ╰╴backtrace (1)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+backtrace no. 1
+  [redacted]

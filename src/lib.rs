@@ -1,12 +1,18 @@
+#![cfg_attr(
+    not(miri),
+    doc(test(attr(deny(warnings, clippy::pedantic, clippy::nursery))))
+)]
+
 use error_stack::fmt::ColorMode;
 use std::fmt;
 use tracing::{debug, error, info, trace, warn, Level};
 
-pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
+pub use error_stack::{Context, Report, ResultExt};
 pub use thiserror;
 
 pub mod attachment;
 pub mod context;
+pub mod error_stack;
 #[cfg(feature = "grpc")]
 pub mod grpc;
 
