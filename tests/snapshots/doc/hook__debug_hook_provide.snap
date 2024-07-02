@@ -1,0 +1,10 @@
+<b>invalid user input</b>
+├╴suggestion: try better next time!
+├╴error code: 420
+├╴at <i>libs/error-stack/src/hook/mod.rs:49:14</i>
+╰╴backtrace (1)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+backtrace no. 1
+  [redacted]
