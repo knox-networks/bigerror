@@ -74,6 +74,18 @@ pub trait Context: fmt::Display + fmt::Debug + Send + Sync + 'static {
 //         Self::new(context)
 //     }
 // }
+//
+impl<E, C> From<E> for Report<C>
+where
+    E: Context,
+    C: Reportable,
+{
+    #[track_caller]
+    #[inline]
+    fn from(err: E) -> Self {
+        Report::new(err).change_context(C::value())
+    }
+}
 
 impl<C: Error + Send + Sync + 'static> Context for C {
     #[cfg(nightly)]
@@ -81,15 +93,3 @@ impl<C: Error + Send + Sync + 'static> Context for C {
         Error::provide(self, request);
     }
 }
-
-// impl<C, C2> From<C> for Report<C2>
-// where
-//     C: IntoContext + ResultExt,
-//     C2: Reportable,
-// {
-//     #[track_caller]
-//     #[inline]
-//     fn from(report: C) -> Self {
-//         report.into_ctx()
-//     }
-// }

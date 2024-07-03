@@ -830,9 +830,9 @@ mod test {
     to_report!(impl ToReport<MyError> for Error::Report);
 
     #[test]
-    fn report_as() {
+    fn report_as_implicit() {
         fn output() -> Result<usize, Report<MyError>> {
-            "NaN".parse::<usize>().report_as()
+            Ok("NaN".parse::<usize>()?)
         }
 
         assert_err!(output());
