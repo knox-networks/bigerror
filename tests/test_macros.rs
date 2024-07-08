@@ -2,9 +2,9 @@
 
 mod common;
 
+use bigerror::{bail, ensure, report};
 #[allow(clippy::wildcard_imports)]
 use common::*;
-use bigerror::{bail, ensure, report};
 
 #[test]
 fn report() {

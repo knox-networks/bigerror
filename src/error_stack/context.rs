@@ -64,6 +64,8 @@ pub trait Context: fmt::Display + fmt::Debug + Send + Sync + 'static {
     fn provide<'a>(&'a self, request: &mut Request<'a>) {}
 }
 
+// For Reference, old error-stack blanket `From<C>` impl:
+// ===
 // impl<C> From<C> for Report<C>
 // where
 //     C: Context,
@@ -74,7 +76,7 @@ pub trait Context: fmt::Display + fmt::Debug + Send + Sync + 'static {
 //         Self::new(context)
 //     }
 // }
-//
+// ===
 impl<E, C> From<E> for Report<C>
 where
     E: Context,

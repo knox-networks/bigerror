@@ -9,10 +9,10 @@ mod common;
 
 use std::backtrace::Backtrace;
 
-#[allow(clippy::wildcard_imports)]
-use common::*;
 #[cfg(nightly)]
 use bigerror::Report;
+#[allow(clippy::wildcard_imports)]
+use common::*;
 
 #[test]
 fn captured() {

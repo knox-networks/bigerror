@@ -8,11 +8,11 @@ mod common;
 #[cfg(nightly)]
 use core::error;
 
-#[allow(clippy::wildcard_imports)]
-use common::*;
 use bigerror::IntoReportCompat;
 #[cfg(all(nightly, feature = "std"))]
 use bigerror::Report;
+#[allow(clippy::wildcard_imports)]
+use common::*;
 
 #[test]
 #[cfg(any(nightly, feature = "std"))]

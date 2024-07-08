@@ -3,9 +3,9 @@
 mod common;
 use core::fmt::{Display, Formatter};
 
+use bigerror::{report, Context, Report};
 #[allow(clippy::wildcard_imports)]
 use common::*;
-use bigerror::{report, Context, Report};
 
 #[derive(Debug)]
 struct Error;

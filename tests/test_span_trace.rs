@@ -3,9 +3,9 @@
 
 mod common;
 
+use bigerror::Result;
 #[allow(clippy::wildcard_imports)]
 use common::*;
-use bigerror::Result;
 use tracing_error::{ErrorLayer, SpanTrace};
 use tracing_subscriber::layer::SubscriberExt;
 

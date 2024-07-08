@@ -3,9 +3,9 @@
 
 mod common;
 
+use bigerror::Report;
 #[allow(clippy::wildcard_imports)]
 use common::*;
-use bigerror::Report;
 
 #[test]
 fn request_attachment() {

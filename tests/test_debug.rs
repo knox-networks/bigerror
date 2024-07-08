@@ -3,11 +3,11 @@
 #![allow(clippy::std_instead_of_core)]
 mod common;
 
-#[allow(clippy::wildcard_imports)]
-use common::*;
 use bigerror::fmt::{Charset, ColorMode};
 #[allow(unused_imports)]
 use bigerror::Report;
+#[allow(clippy::wildcard_imports)]
+use common::*;
 use insta::assert_snapshot;
 #[cfg(feature = "spantrace")]
 use tracing_error::ErrorLayer;

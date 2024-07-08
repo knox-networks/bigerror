@@ -3,9 +3,9 @@
 #[macro_use]
 mod common;
 
+use bigerror::{AttachmentKind, FrameKind, FutureExt, Report, ResultExt};
 #[allow(clippy::wildcard_imports)]
 use common::*;
-use bigerror::{AttachmentKind, FrameKind, FutureExt, Report, ResultExt};
 
 fn test_messages<E>(report: &Report<E>) {
     assert_eq!(
