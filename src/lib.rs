@@ -1,19 +1,39 @@
-use error_stack::fmt::ColorMode;
-use std::fmt;
-use tracing::{debug, error, info, trace, warn, Level};
+#![cfg_attr(
+    not(miri),
+    doc(test(attr(deny(warnings, clippy::pedantic, clippy::nursery))))
+)]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(
+    nightly,
+    feature(error_generic_member_access),
+    allow(clippy::incompatible_msrv)
+)]
+#![cfg_attr(all(doc, nightly), feature(doc_auto_cfg))]
+#![cfg_attr(all(nightly, feature = "std"), feature(backtrace_frames))]
+#![allow(unsafe_code)]
+// This is an error handling library producing Results, not Errors
+#![allow(clippy::missing_errors_doc)]
 
-pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
-pub use thiserror;
+extern crate alloc;
 
 pub mod attachment;
 pub mod context;
+pub mod error_stack;
+pub mod fmt;
 #[cfg(feature = "grpc")]
 pub mod grpc;
 
 pub use attachment::{Expectation, Field, Index, KeyValue, Type};
-
-use attachment::{Dbg, Debug, Display};
 pub use context::*;
+
+use crate::fmt::ColorMode;
+use attachment::{Dbg, Debug, Display};
+use tracing::{debug, error, info, trace, warn, Level};
+
+pub use error_stack::{
+    iter, AttachmentKind, Context, Frame, FrameKind, FutureExt, Report, ResultExt,
+};
+pub use thiserror;
 
 // TODO we'll have to do a builder pattern here at
 // some point
@@ -323,27 +343,27 @@ impl<T, C> AttachExt for Result<T, Report<C>> {
 // in a functional matter
 pub trait LogError<T, E>
 where
-    E: fmt::Debug,
+    E: std::fmt::Debug,
 {
     // swallows and logs error
     fn log_err(self);
     // swallows and logs error with attachment
     fn log_attached_err<A>(self, attachment: A)
     where
-        A: fmt::Debug + Send + Sync + 'static;
+        A: std::fmt::Debug + Send + Sync + 'static;
     // logs error and forwards
     fn and_log_err(self) -> Result<T, E>;
     fn and_log(self, level: Level) -> Result<T, E>;
     // logs error and forwards with attachment
     fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
     where
-        A: fmt::Debug + Send + Sync + 'static;
+        A: std::fmt::Debug + Send + Sync + 'static;
     fn on_err(self, op: impl FnOnce()) -> Result<T, E>;
 }
 
 impl<T, E> LogError<T, E> for Result<T, E>
 where
-    E: fmt::Debug,
+    E: std::fmt::Debug,
 {
     #[inline]
     #[track_caller]
@@ -357,7 +377,7 @@ where
     #[track_caller]
     fn log_attached_err<A>(self, attachment: A)
     where
-        A: fmt::Debug + Send + Sync + 'static,
+        A: std::fmt::Debug + Send + Sync + 'static,
     {
         if let Err(e) = self {
             error!(err = ?e, "{attachment:?}");
@@ -391,7 +411,7 @@ where
     #[track_caller]
     fn and_attached_err<A>(self, attachment: A) -> Self
     where
-        A: fmt::Debug + Send + Sync + 'static,
+        A: std::fmt::Debug + Send + Sync + 'static,
     {
         if let Err(e) = &self {
             error!(err = ?e, "{attachment:?}");
@@ -810,9 +830,9 @@ mod test {
     to_report!(impl ToReport<MyError> for Error::Report);
 
     #[test]
-    fn report_as() {
+    fn report_as_implicit() {
         fn output() -> Result<usize, Report<MyError>> {
-            "NaN".parse::<usize>().report_as()
+            Ok("NaN".parse::<usize>()?)
         }
 
         assert_err!(output());

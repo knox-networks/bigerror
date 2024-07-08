@@ -1,10 +1,11 @@
 use std::{fmt::Display, str::FromStr};
 
-use error_stack::{iter::Frames, AttachmentKind, Context, FrameKind, Report};
+use crate::{
+    attachment, iter::Frames, AttachExt, AttachmentKind, Context, ConversionError, FrameKind,
+    OptionReport, ParseError, Report, ReportAs,
+};
 use tonic::{Code, Status};
 use tonic_types::{ErrorDetails, StatusExt};
-
-use crate::{attachment, AttachExt, ConversionError, OptionReport, ParseError, ReportAs};
 
 /// Dentotes the start of a `google.rpc.DebugInfo` message start
 /// https://github.com/googleapis/googleapis/blob/f36c650/google/rpc/error_details.proto#L97-L103
@@ -109,9 +110,9 @@ where
 
 #[inline]
 #[track_caller]
-pub fn try_field<T, U: TryFrom<T>>(value: T, name: &'static str) -> Result<U, Status>
+pub fn try_field<T, U>(value: T, name: &'static str) -> Result<U, Status>
 where
-    U: Send + Sync,
+    U: Send + Sync + TryFrom<T>,
     U::Error: Context,
 {
     match U::try_from(value) {
@@ -124,9 +125,9 @@ where
 
 #[inline]
 #[track_caller]
-pub fn try_report_field<T, U: TryFrom<T>>(value: T, name: &'static str) -> Result<U, Status>
+pub fn try_report_field<T, U>(value: T, name: &'static str) -> Result<U, Status>
 where
-    U: Send + Sync,
+    U: Send + Sync + TryFrom<T>,
     U::Error: AttachExt + ReportStatus,
 {
     match U::try_from(value) {
