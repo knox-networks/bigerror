@@ -83,10 +83,10 @@ use crate::{
 /// ## Provide a context for an error
 ///
 /// ```rust
-/// use bigerror::{ResultExt, error_stack::Result};
+/// use bigerror::{ResultExt, BigResult};
 ///
 /// # #[allow(dead_code)]
-/// # fn fake_main() -> Result<String, std::io::Error> {
+/// # fn fake_main() -> BigResult<String, std::io::Error> {
 /// let config_path = "./path/to/config.file";
 /// let content = std::fs::read_to_string(config_path)
 ///     .attach_printable_lazy(|| format!("failed to read config file {config_path:?}"))?;
@@ -207,10 +207,10 @@ use crate::{
 /// ## Get the attached [`Backtrace`] and [`SpanTrace`]:
 ///
 /// ```rust,should_panic
-/// use bigerror::{ResultExt, error_stack::Result};
+/// use bigerror::{ResultExt, BigResult};
 ///
 /// # #[allow(unused_variables)]
-/// # fn main() -> Result<(), std::io::Error> {
+/// # fn main() -> BigResult<(), std::io::Error> {
 /// let config_path = "./path/to/config.file";
 /// let content = std::fs::read_to_string(config_path)
 ///     .attach_printable_lazy(|| format!("failed to read config file {config_path:?}"));
@@ -241,7 +241,7 @@ use crate::{
 #[must_use]
 pub struct Report<C> {
     // The vector is boxed as this implies a memory footprint equal to a single pointer size
-    // instead of three pointer sizes. Even for small `Result::Ok` variants, the `Result` would
+    // instead of three pointer sizes. Even for small `Result::Ok` variants, the `BigResult` would
     // still have at least the size of `Report`, even at the happy path. It's unexpected, that
     // creating or traversing a report will happen in the hot path, so a double indirection is
     // a good trade-off.

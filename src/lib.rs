@@ -31,7 +31,8 @@ use attachment::{Dbg, Debug, Display};
 use tracing::{debug, error, info, trace, warn, Level};
 
 pub use error_stack::{
-    iter, AttachmentKind, Context, Frame, FrameKind, FutureExt, Report, ResultExt,
+    iter, AttachmentKind, BigResult, Context, Frame, FrameKind, FutureExt, IntoReportCompat,
+    Report, ResultExt,
 };
 pub use thiserror;
 
@@ -632,7 +633,7 @@ macro_rules! to_report {
 }
 
 pub trait ResultToReport<T> {
-    /// Type of the [`Ok`] value in the [`Result`]
+    /// Type of the [`Ok`] value in the [`BigResult`]
     type Ok;
 
     #[track_caller]

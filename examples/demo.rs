@@ -3,7 +3,7 @@
 
 use core::fmt;
 
-use bigerror::{error_stack::Result, Context, Report, ResultExt};
+use bigerror::{error_stack::BigResult, Context, Report, ResultExt};
 
 #[derive(Debug)]
 struct ParseExperimentError;
@@ -18,7 +18,7 @@ impl Context for ParseExperimentError {}
 
 // Reason: false-positive, try_fold is fail-fast, our implementation is fail-slow.
 #[allow(clippy::manual_try_fold)]
-fn parse_experiment(description: &str) -> Result<Vec<(u64, u64)>, ParseExperimentError> {
+fn parse_experiment(description: &str) -> BigResult<Vec<(u64, u64)>, ParseExperimentError> {
     let values = description
         .split(' ')
         .map(|value| {
@@ -61,7 +61,7 @@ impl Context for ExperimentError {}
 fn start_experiments(
     experiment_ids: &[usize],
     experiment_descriptions: &[&str],
-) -> Result<Vec<u64>, ExperimentError> {
+) -> BigResult<Vec<u64>, ExperimentError> {
     let experiments = experiment_ids
         .iter()
         .map(|exp_id| {
@@ -83,7 +83,7 @@ fn start_experiments(
         })
         .fold(
             Ok(vec![]),
-            |accum: Result<_, ExperimentError>, value| match (accum, value) {
+            |accum: BigResult<_, ExperimentError>, value| match (accum, value) {
                 (Ok(mut accum), Ok(value)) => {
                     accum.extend(value);
 
@@ -103,7 +103,7 @@ fn start_experiments(
     Ok(experiments.iter().map(|experiment| experiment()).collect())
 }
 
-fn main() -> Result<(), ExperimentError> {
+fn main() -> BigResult<(), ExperimentError> {
     let experiment_ids = &[0, 2, 3];
     let experiment_descriptions = &["10", "20", "3o 4a"];
     start_experiments(experiment_ids, experiment_descriptions)?;

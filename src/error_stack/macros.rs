@@ -80,7 +80,7 @@ pub mod __private {
 /// ```rust
 /// use std::fs;
 ///
-/// use bigerror::{report, error_stack::Result};
+/// use bigerror::{report, BigResult};
 ///
 /// # fn wrapper() -> Result<(), impl core::fmt::Debug> {
 /// match fs::read_to_string("/path/to/file") {
@@ -131,7 +131,7 @@ macro_rules! report {
     }};
 }
 
-/// Creates a [`Report`] and returns it as [`Result`].
+/// Creates a [`Report`] and returns it as [`BigResult`].
 ///
 /// Shorthand for `return `Err`(`[`report!(...)`]`)`
 ///
@@ -147,7 +147,7 @@ macro_rules! report {
 /// ```
 /// use std::fs;
 ///
-/// use bigerror::{bail, error_stack::Result};
+/// use bigerror::{bail, BigResult};
 /// # fn wrapper() -> Result<(), impl core::fmt::Debug> {
 /// match fs::read_to_string("/path/to/file") {
 ///     Ok(content) => println!("file contents: {content}"),
@@ -193,7 +193,7 @@ macro_rules! report {
 #[macro_export]
 macro_rules! bail {
     ($err:expr $(,)?) => {{
-        return $crate::error_stack::Result::Err($crate::report!($err));
+        return $crate::error_stack::BigResult::Err($crate::report!($err));
     }};
 }
 

@@ -21,7 +21,7 @@ mod eyre;
 /// [`Context`]: error_stack::Context
 /// [`Error`]: core::error::Error
 pub trait IntoReportCompat: Sized {
-    /// Type of the [`Ok`] value in the [`Result`]
+    /// Type of the [`Ok`] value in the [`BigResult`]
     type Ok;
 
     /// Type of the resulting [`Err`] variant wrapped inside a [`Report<E>`].
@@ -29,7 +29,7 @@ pub trait IntoReportCompat: Sized {
     /// [`Report<E>`]: error_stack::Report
     type Err;
 
-    /// Converts the [`Err`] variant of the [`Result`] to a [`Report`]
+    /// Converts the [`Err`] variant of the [`BigResult`] to a [`Report`]
     ///
     /// [`Report`]: error_stack::Report
     fn into_report(self) -> Result<Self::Ok, Report<Self::Err>>;

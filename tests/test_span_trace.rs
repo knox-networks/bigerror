@@ -3,7 +3,7 @@
 
 mod common;
 
-use bigerror::{error_stack::Result, Report};
+use bigerror::{error_stack::BigResult, Report};
 #[allow(clippy::wildcard_imports)]
 use common::*;
 use tracing_error::{ErrorLayer, SpanTrace};
@@ -24,12 +24,12 @@ fn captured() {
     install_tracing_subscriber();
 
     #[tracing::instrument]
-    fn func_b() -> Result<(), RootError> {
+    fn func_b() -> BigResult<(), RootError> {
         create_error()
     }
 
     #[tracing::instrument]
-    fn func_a() -> Result<(), RootError> {
+    fn func_a() -> BigResult<(), RootError> {
         func_b()
     }
 
@@ -63,7 +63,7 @@ fn provided() {
     }
 
     #[tracing::instrument]
-    fn func_a() -> Result<(), ErrorA> {
+    fn func_a() -> BigResult<(), ErrorA> {
         Err(Report::new(func_b()))
     }
 

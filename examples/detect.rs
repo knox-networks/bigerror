@@ -10,7 +10,7 @@ use core::fmt::{Display, Formatter};
 use std::path::Path;
 
 use bigerror::{
-    error_stack::Result,
+    error_stack::BigResult,
     fmt::{Charset, ColorMode},
     Report,
 };
@@ -28,7 +28,7 @@ impl Display for ParseConfigError {
 
 impl std::error::Error for ParseConfigError {}
 
-fn parse_config(path: impl AsRef<Path>) -> Result<Config, ParseConfigError> {
+fn parse_config(path: impl AsRef<Path>) -> BigResult<Config, ParseConfigError> {
     _ = path.as_ref();
 
     /*

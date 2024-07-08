@@ -20,7 +20,7 @@ All notable changes to `error-stack` will be documented in this file.
 
 ### Features
 
-- Implement `ResultExt` for `Result` even if the `Err`-variant is not `Report<C>` but only `C: Context` ([#2883](https://github.com/hashintel/hash/pull/2883))
+- Implement `ResultExt` for `BigResult` even if the `Err`-variant is not `Report<C>` but only `C: Context` ([#2883](https://github.com/hashintel/hash/pull/2883))
 
 ### Deprecations
 

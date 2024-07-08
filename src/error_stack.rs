@@ -33,7 +33,7 @@
 //!
 //! ```rust
 //! # #![allow(dead_code)]
-//! use bigerror::{ResultExt, error_stack::Result};
+//! use bigerror::{ResultExt, BigResult};
 //! // using `thiserror` is not neccessary, but convenient
 //! use thiserror::Error;
 //!
@@ -73,9 +73,9 @@
 //!
 //! ## Where to use a Report
 //!
-//! [`Report`] has been designed to be used as the [`Err`] variant of a `Result`. This crate
-//! provides a [`Result<E, C>`] type alias for convenience which uses [`Report<C>`] as the [`Err`]
-//! variant and can be used as a return type:
+//! [`Report`] has been designed to be used as the [`Err`] variant of a `BigResult`.
+//! This crate provides a [`Result<E, C>`] type alias for convenience
+//! which uses [`Report<C>`] as the [`Err`] variant and can be used as a return type:
 //!
 //! ```rust
 //! # fn has_permission(_: (), _: ()) -> bool { true }
@@ -86,9 +86,9 @@
 //! #    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
 //! # }
 //! # impl bigerror::Context for AccessError {}
-//! use bigerror::{ensure, error_stack::Result};
+//! use bigerror::{ensure, BigResult};
 //!
-//! fn main() -> Result<(), AccessError> {
+//! fn main() -> BigResult<(), AccessError> {
 //!     let user = get_user()?;
 //!     let resource = get_resource()?;
 //!
@@ -115,7 +115,7 @@
 //!
 //! use bigerror::Report;
 //!
-//! // Note: For demonstration purposes this example does not use `error_stack::Result`.
+//! // Note: For demonstration purposes this example does not use `BigResult`.
 //! // As can be seen, one must explicitly convert `io::Error` to `Report<io::Error>`
 //! fn read_file(path: impl AsRef<Path>) -> Result<String, Report<io::Error>> {
 //!     let content = fs::read_to_string(path).map_err(Report::new)?;
@@ -146,7 +146,7 @@
 //!
 //! ```rust
 //! # use std::{fmt, fs, io, path::Path};
-//! use bigerror::{Context, ResultExt, error_stack::Result};
+//! use bigerror::{Context, ResultExt, BigResult};
 //! # pub type Config = String;
 //!
 //! #[derive(Debug)]
@@ -161,7 +161,7 @@
 //! // It's also possible to implement `Error` instead.
 //! impl Context for ParseConfigError {}
 //!
-//! // For clarification, this example is not using `error_stack::Result`.
+//! // For clarification, this example is not using `error_stack::BigResult`.
 //! fn parse_config(path: impl AsRef<Path>) -> Result<Config, ParseConfigError> {
 //!     let content = fs::read_to_string(path.as_ref())
 //!         .change_context(ParseConfigError)?;
@@ -349,7 +349,7 @@
 //!
 //! ```rust
 //! # #![cfg_attr(not(nightly), allow(unused_variables, dead_code))]
-//! # use bigerror::error_stack::Result;
+//! # use bigerror::error_stack::BigResult;
 //! # struct Suggestion(&'static str);
 //! # fn parse_config(_: &str) -> Result<(), std::io::Error> { Ok(()) }
 //! fn main() {
@@ -433,7 +433,7 @@
 //!
 //! [`ResultExt`] is a convenient wrapper around `Result<_, impl Context>` and `Result<_,
 //! Report<impl Context>`. It offers [`attach`](ResultExt::attach) and
-//! [`change_context`](ResultExt::change_context) on the [`Result`] directly, but also a lazy
+//! [`change_context`](ResultExt::change_context) on the [`BigResult`] directly, but also a lazy
 //! variant that receives a function which is only called if an error happens.
 //!
 //! In addition to [`ResultExt`], this crate also comes with [`FutureExt`], which provides the same
@@ -494,7 +494,7 @@ pub use self::{
     frame::{AttachmentKind, Frame, FrameKind},
     macros::*,
     report::Report,
-    result::Result,
+    result::BigResult,
 };
 #[doc(inline)]
 #[allow(deprecated)]

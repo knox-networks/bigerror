@@ -22,7 +22,7 @@ use core::{
 #[cfg(all(rust_1_65, feature = "std"))]
 use std::backtrace::Backtrace;
 
-use bigerror::{error_stack::Result, AttachmentKind, Context, Frame, FrameKind, Report};
+use bigerror::{error_stack::BigResult, AttachmentKind, Context, Frame, FrameKind, Report};
 #[allow(unused_imports)]
 use once_cell::sync::Lazy;
 #[cfg(feature = "spantrace")]
@@ -163,19 +163,19 @@ impl fmt::Display for PrintableC {
     }
 }
 
-pub fn create_error() -> Result<(), RootError> {
+pub fn create_error() -> BigResult<(), RootError> {
     Err(create_report())
 }
 
-pub fn create_future() -> impl Future<Output = Result<(), RootError>> {
+pub fn create_future() -> impl Future<Output = BigResult<(), RootError>> {
     futures::future::err(create_report())
 }
 
-pub fn capture_ok<E>(closure: impl FnOnce() -> Result<(), E>) {
+pub fn capture_ok<E>(closure: impl FnOnce() -> BigResult<(), E>) {
     closure().expect("expected an OK value, found an error");
 }
 
-pub fn capture_error<E>(closure: impl FnOnce() -> Result<(), E>) -> Report<E> {
+pub fn capture_error<E>(closure: impl FnOnce() -> BigResult<(), E>) -> Report<E> {
     closure().expect_err("expected an error")
 }
 

@@ -12,7 +12,7 @@ use core::{
     task::{Context as TaskContext, Poll},
 };
 
-use crate::error_stack::{Context, Result, ResultExt};
+use crate::error_stack::{BigResult, Context, ResultExt};
 
 macro_rules! implement_future_adaptor {
     ($future:ident, $method:ident, $bound:ident $(+ $bounds:ident)* $(+ $lifetime:lifetime)*, $output:ty) => {
@@ -101,49 +101,49 @@ implement_future_adaptor!(
     FutureWithAttachment,
     attach,
     Send + Sync + 'static,
-    Result<<Fut::Output as ResultExt>::Ok, <Fut::Output as ResultExt>::Context>
+    BigResult<<Fut::Output as ResultExt>::Ok, <Fut::Output as ResultExt>::Context>
 );
 
 implement_lazy_future_adaptor!(
     FutureWithLazyAttachment,
     attach_lazy,
     Send + Sync + 'static,
-    Result<<Fut::Output as ResultExt>::Ok, <Fut::Output as ResultExt>::Context>
+    BigResult<<Fut::Output as ResultExt>::Ok, <Fut::Output as ResultExt>::Context>
 );
 
 implement_future_adaptor!(
     FutureWithPrintableAttachment,
     attach_printable,
     Display + Debug + Send + Sync + 'static,
-    Result<<Fut::Output as ResultExt>::Ok, <Fut::Output as ResultExt>::Context>
+    BigResult<<Fut::Output as ResultExt>::Ok, <Fut::Output as ResultExt>::Context>
 );
 
 implement_lazy_future_adaptor!(
     FutureWithLazyPrintableAttachment,
     attach_printable_lazy,
     Display + Debug + Send + Sync + 'static,
-    Result<<Fut::Output as ResultExt>::Ok, <Fut::Output as ResultExt>::Context>
+    BigResult<<Fut::Output as ResultExt>::Ok, <Fut::Output as ResultExt>::Context>
 );
 
 implement_future_adaptor!(
     FutureWithContext,
     change_context,
     Context,
-    Result<<Fut::Output as ResultExt>::Ok, T>
+    BigResult<<Fut::Output as ResultExt>::Ok, T>
 );
 
 implement_lazy_future_adaptor!(
     FutureWithLazyContext,
     change_context_lazy,
     Context,
-    Result<<Fut::Output as ResultExt>::Ok, T>
+    BigResult<<Fut::Output as ResultExt>::Ok, T>
 );
 
 /// Extension trait for [`Future`] to provide contextual information on [`Report`]s.
 ///
 /// [`Report`]: error_stack::Report
 pub trait FutureExt: Future + Sized {
-    /// Adds a new attachment to the [`Report`] inside the [`Result`] when [`poll`]ing the
+    /// Adds a new attachment to the [`Report`] inside the [`BigResult`] when [`poll`]ing the
     /// [`Future`].
     ///
     /// Applies [`Report::attach`] on the [`Err`] variant, refer to it for more information.
@@ -156,7 +156,7 @@ pub trait FutureExt: Future + Sized {
     where
         A: Send + Sync + 'static;
 
-    /// Lazily adds a new attachment to the [`Report`] inside the [`Result`] when [`poll`]ing the
+    /// Lazily adds a new attachment to the [`Report`] inside the [`BigResult`] when [`poll`]ing the
     /// [`Future`].
     ///
     /// Applies [`Report::attach`] on the [`Err`] variant, refer to it for more information.
@@ -170,7 +170,7 @@ pub trait FutureExt: Future + Sized {
         A: Send + Sync + 'static,
         F: FnOnce() -> A;
 
-    /// Adds a new printable attachment to the [`Report`] inside the [`Result`] when [`poll`]ing the
+    /// Adds a new printable attachment to the [`Report`] inside the [`BigResult`] when [`poll`]ing the
     /// [`Future`].
     ///
     /// Applies [`Report::attach_printable`] on the [`Err`] variant, refer to it for more
@@ -184,7 +184,7 @@ pub trait FutureExt: Future + Sized {
     where
         A: Display + Debug + Send + Sync + 'static;
 
-    /// Lazily adds a new printable attachment to the [`Report`] inside the [`Result`] when
+    /// Lazily adds a new printable attachment to the [`Report`] inside the [`BigResult`] when
     /// [`poll`]ing the [`Future`].
     ///
     /// Applies [`Report::attach_printable`] on the [`Err`] variant, refer to it for more
@@ -202,7 +202,7 @@ pub trait FutureExt: Future + Sized {
         A: Display + Debug + Send + Sync + 'static,
         F: FnOnce() -> A;
 
-    /// Changes the [`Context`] of the [`Report`] inside the [`Result`] when [`poll`]ing the
+    /// Changes the [`Context`] of the [`Report`] inside the [`BigResult`] when [`poll`]ing the
     /// [`Future`].
     ///
     /// Applies [`Report::change_context`] on the [`Err`] variant, refer to it for more information.
@@ -215,7 +215,7 @@ pub trait FutureExt: Future + Sized {
     where
         C: Context;
 
-    /// Lazily changes the [`Context`] of the [`Report`] inside the [`Result`] when [`poll`]ing the
+    /// Lazily changes the [`Context`] of the [`Report`] inside the [`BigResult`] when [`poll`]ing the
     /// [`Future`].
     ///
     /// Applies [`Report::change_context`] on the [`Err`] variant, refer to it for more information.
