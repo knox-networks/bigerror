@@ -1,6 +1,5 @@
 #![cfg(any(feature = "eyre", feature = "anyhow"))]
-#![cfg_attr(nightly, feature(error_generic_member_access))]
-#![cfg_attr(nightly, allow(clippy::incompatible_msrv))]
+#![cfg_attr(nightly, feature(error_in_core, error_generic_member_access))]
 #![cfg_attr(all(nightly, feature = "std"), feature(backtrace_frames))]
 
 mod common;
@@ -8,7 +7,7 @@ mod common;
 #[cfg(nightly)]
 use core::error;
 
-use bigerror::IntoReportCompat;
+use bigerror::error_stack::IntoReportCompat;
 #[cfg(all(nightly, feature = "std"))]
 use bigerror::Report;
 #[allow(clippy::wildcard_imports)]

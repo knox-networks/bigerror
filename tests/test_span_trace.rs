@@ -3,7 +3,7 @@
 
 mod common;
 
-use bigerror::Result;
+use bigerror::error_stack::Result;
 #[allow(clippy::wildcard_imports)]
 use common::*;
 use tracing_error::{ErrorLayer, SpanTrace};
