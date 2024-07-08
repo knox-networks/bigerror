@@ -4,7 +4,7 @@ use core::fmt;
 #[cfg(all(not(nightly), feature = "std"))]
 use std::error::Error;
 
-use crate::{error_stack::Report, DecodeError, IntoContext, Reportable, ResultExt};
+use crate::{error_stack::Report, Reportable, ResultExt};
 
 /// Defines the current context of a [`Report`].
 ///
