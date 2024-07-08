@@ -1,4 +1,4 @@
-#![cfg(all(rust_1_65, feature = "std"))]
+#![cfg(all(not(nightly), feature = "std"))]
 #![cfg_attr(
     nightly,
     feature(backtrace_frames, error_generic_member_access),

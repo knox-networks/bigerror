@@ -19,7 +19,7 @@ use core::{
     iter,
     sync::atomic::{AtomicI8, Ordering},
 };
-#[cfg(all(rust_1_65, feature = "std"))]
+#[cfg(all(not(nightly), feature = "std"))]
 use std::backtrace::Backtrace;
 
 use bigerror::{error_stack::BigResult, AttachmentKind, Context, Frame, FrameKind, Report};
@@ -100,17 +100,17 @@ impl Context for ErrorA {
 }
 
 #[derive(Debug)]
-#[cfg(all(rust_1_65, feature = "std"))]
+#[cfg(all(not(nightly), feature = "std"))]
 pub struct ErrorB(pub u32, std::backtrace::Backtrace);
 
-#[cfg(all(rust_1_65, feature = "std"))]
+#[cfg(all(not(nightly), feature = "std"))]
 impl ErrorB {
     pub fn new(value: u32) -> Self {
         Self(value, Backtrace::force_capture())
     }
 }
 
-#[cfg(all(rust_1_65, feature = "std"))]
+#[cfg(all(not(nightly), feature = "std"))]
 impl fmt::Display for ErrorB {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.write_str("error B")
@@ -124,7 +124,7 @@ impl core::error::Error for ErrorB {
     }
 }
 
-#[cfg(all(rust_1_65, feature = "std"))]
+#[cfg(all(not(nightly), feature = "std"))]
 impl ErrorB {
     pub const fn backtrace(&self) -> &Backtrace {
         &self.1
@@ -186,7 +186,7 @@ pub fn messages<E>(report: &Report<E>) -> Vec<String> {
             FrameKind::Context(context) => context.to_string(),
             FrameKind::Attachment(AttachmentKind::Printable(attachment)) => attachment.to_string(),
             FrameKind::Attachment(AttachmentKind::Opaque(_)) => {
-                #[cfg(all(rust_1_65, feature = "std"))]
+                #[cfg(all(not(nightly), feature = "std"))]
                 if frame.type_id() == TypeId::of::<Backtrace>() {
                     return String::from("Backtrace");
                 }
@@ -209,7 +209,7 @@ pub fn frame_kinds<E>(report: &Report<E>) -> Vec<FrameKind> {
     remove_builtin_frames(report).map(Frame::kind).collect()
 }
 
-#[cfg(all(rust_1_65, feature = "std"))]
+#[cfg(all(not(nightly), feature = "std"))]
 pub fn supports_backtrace() -> bool {
     static STATE: Lazy<bool> = Lazy::new(|| {
         let bt = std::backtrace::Backtrace::capture();
@@ -249,7 +249,7 @@ pub fn remove_builtin_messages<S: AsRef<str>>(
 
 pub fn remove_builtin_frames<E>(report: &Report<E>) -> impl Iterator<Item = &Frame> {
     report.frames().filter(|frame| {
-        #[cfg(all(rust_1_65, feature = "std"))]
+        #[cfg(all(not(nightly), feature = "std"))]
         if frame.type_id() == TypeId::of::<Backtrace>() {
             return false;
         }
@@ -266,7 +266,7 @@ pub fn remove_builtin_frames<E>(report: &Report<E>) -> impl Iterator<Item = &Fra
 #[allow(unused_mut)]
 #[allow(clippy::missing_const_for_fn)]
 pub fn expect_count(mut count: usize) -> usize {
-    #[cfg(all(rust_1_65, feature = "std"))]
+    #[cfg(all(not(nightly), feature = "std"))]
     if supports_backtrace() {
         count += 1;
     }

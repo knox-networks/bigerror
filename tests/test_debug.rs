@@ -28,12 +28,12 @@ fn setup_tracing() {
 #[cfg(not(feature = "spantrace"))]
 const fn setup_tracing() {}
 
-#[cfg(not(all(rust_1_65, feature = "std")))]
+#[cfg(not(all(not(nightly), feature = "std")))]
 fn setup_backtrace() {
     std::env::set_var("RUST_LIB_BACKTRACE", "0");
 }
 
-#[cfg(all(rust_1_65, feature = "std"))]
+#[cfg(all(not(nightly), feature = "std"))]
 fn setup_backtrace() {
     std::env::set_var("RUST_LIB_BACKTRACE", "1");
 }
@@ -58,7 +58,7 @@ fn snap_suffix() -> String {
         suffix.push("spantrace");
     }
 
-    #[cfg(all(rust_1_65, feature = "std"))]
+    #[cfg(all(not(nightly), feature = "std"))]
     if supports_backtrace() {
         suffix.push("backtrace");
     }
@@ -230,7 +230,7 @@ fn sources_nested_alternate() {
 
 mod full {
     #![cfg(all(
-        rust_1_65,
+        not(nightly),
         any(feature = "std", feature = "hooks"),
         feature = "spantrace"
     ))]
