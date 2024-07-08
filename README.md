@@ -39,3 +39,5 @@ CREATE CRATE IF NOT EXISTS
     error BIGERROR NOT NULL,
 );
 ```
+
+* Note: `#[cfg(nightly)]` flags are not actively tested and are retained as part of merging `error-stack` into `bigerror`
