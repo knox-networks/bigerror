@@ -3,7 +3,7 @@
 
 mod common;
 
-use bigerror::error_stack::Result;
+use bigerror::{error_stack::Result, Report};
 #[allow(clippy::wildcard_imports)]
 use common::*;
 use tracing_error::{ErrorLayer, SpanTrace};
@@ -64,7 +64,7 @@ fn provided() {
 
     #[tracing::instrument]
     fn func_a() -> Result<(), ErrorA> {
-        Err(error_stack::Report::new(func_b()))
+        Err(Report::new(func_b()))
     }
 
     let report = capture_error(func_a);

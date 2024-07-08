@@ -5,7 +5,7 @@ mod common;
 
 use bigerror::fmt::{Charset, ColorMode};
 #[allow(unused_imports)]
-use bigerror::Report;
+use bigerror::{error_stack, Report};
 #[allow(clippy::wildcard_imports)]
 use common::*;
 use insta::assert_snapshot;
