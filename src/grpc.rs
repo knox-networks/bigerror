@@ -110,9 +110,9 @@ where
 
 #[inline]
 #[track_caller]
-pub fn try_field<T, U: TryFrom<T>>(value: T, name: &'static str) -> Result<U, Status>
+pub fn try_field<T, U>(value: T, name: &'static str) -> Result<U, Status>
 where
-    U: Send + Sync,
+    U: Send + Sync + TryFrom<T>,
     U::Error: Context,
 {
     match U::try_from(value) {
@@ -125,9 +125,9 @@ where
 
 #[inline]
 #[track_caller]
-pub fn try_report_field<T, U: TryFrom<T>>(value: T, name: &'static str) -> Result<U, Status>
+pub fn try_report_field<T, U>(value: T, name: &'static str) -> Result<U, Status>
 where
-    U: Send + Sync,
+    U: Send + Sync + TryFrom<T>,
     U::Error: AttachExt + ReportStatus,
 {
     match U::try_from(value) {
