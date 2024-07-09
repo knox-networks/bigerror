@@ -51,7 +51,7 @@ pub struct Attributes {
 impl Attributes {
     pub fn parse(input: &DeriveInput) -> Result<Attributes, Error> {
         let mut builder = Builder::default();
-        let mut display: Option<LitStr> = None;
+        let display: Option<LitStr> = None;
 
         for attr in input.attrs.iter() {
             if attr.path().is_ident("display") {

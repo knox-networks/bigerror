@@ -1,12 +1,12 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_quote, Data, DeriveInput, Error, Field, Fields, LitStr, Path};
+use syn::{Data, DeriveInput, Error, Fields};
 
 use crate::attributes::Attributes;
 
 pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
     let name = &input.ident;
-    let attributes = Attributes::parse(&input)?;
+    let attributes = Attributes::parse(input)?;
     match &input.data {
         Data::Struct(data_struct) => {
             if !matches!(data_struct.fields, Fields::Unit) {

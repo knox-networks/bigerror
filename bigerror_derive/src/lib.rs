@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, parse_quote, Attribute, DeriveInput, ItemStruct, LitStr};
+use syn::{parse_macro_input, DeriveInput};
 
 mod attributes;
 mod context;
