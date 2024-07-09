@@ -59,7 +59,7 @@ where
     Self: Sized + Context,
 {
     fn value() -> Self;
-    fn report<C: Context>(ctx: C) -> Report<Self> {
+    fn from_ctx<C: Context>(ctx: C) -> Report<Self> {
         Report::new(ctx).change_context(Self::value())
     }
     // TODO
@@ -213,11 +213,6 @@ where
 macro_rules! reportable {
     ($context:ident) => {
         impl $crate::Reportable for $context {
-            #[track_caller]
-            fn report<C: $crate::Context>(ctx: C) -> $crate::Report<Self> {
-                $crate::Report::new(ctx).change_context(Self)
-            }
-
             fn value() -> Self {
                 $context
             }
@@ -608,9 +603,12 @@ mod test {
             }
         };
     }
+    fn output() -> Result<usize, Report<MyError>> {
+        Ok("NaN".parse::<usize>()?)
+    }
 
     #[test]
-    fn report_as_implicit() {
+    fn implicit_from() {
         fn output() -> Result<usize, Report<MyError>> {
             Ok("NaN".parse::<usize>()?)
         }
@@ -618,9 +616,9 @@ mod test {
         assert_err!(output());
     }
     #[test]
-    fn reportable() {
+    fn explicit_from() {
         fn output() -> Result<usize, Report<MyError>> {
-            "NaN".parse::<usize>().map_err(MyError::report)
+            "NaN".parse::<usize>().map_err(MyError::from_ctx)
         }
 
         assert_err!(output());

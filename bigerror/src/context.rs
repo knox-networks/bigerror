@@ -95,6 +95,10 @@ pub struct Timeout(pub Duration);
 #[crate::derive_ctx]
 pub struct AssertionError;
 
+#[derive(Context)]
+#[bigerror(crate)]
+pub struct Assertion2Error;
+
 pub trait CoreError: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
 
 impl<T> CoreError for T where T: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
@@ -151,7 +155,7 @@ impl ConversionError {
     }
     #[track_caller]
     pub fn from<F, T>(ctx: impl Context) -> Report<Self> {
-        Self::report(ctx).attach_printable(FromTo(ty!(F), ty!(T)))
+        Self::from_ctx(ctx).attach_printable(FromTo(ty!(F), ty!(T)))
     }
 }
 

@@ -82,7 +82,7 @@ pub mod __private {
 ///
 /// use bigerror::{report, BigResult};
 ///
-/// # fn wrapper() -> Result<(), impl core::fmt::Debug> {
+/// # fn wrapper() -> BigResult<(), impl core::fmt::Debug> {
 /// match fs::read_to_string("/path/to/file") {
 ///     Ok(content) => println!("file contents: {content}"),
 ///     Err(err) => return Err(report!(err)),
@@ -148,7 +148,7 @@ macro_rules! report {
 /// use std::fs;
 ///
 /// use bigerror::{bail, BigResult};
-/// # fn wrapper() -> Result<(), impl core::fmt::Debug> {
+/// # fn wrapper() -> BigResult<(), impl core::fmt::Debug> {
 /// match fs::read_to_string("/path/to/file") {
 ///     Ok(content) => println!("file contents: {content}"),
 ///     Err(err) => bail!(err),

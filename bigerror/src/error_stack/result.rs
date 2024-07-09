@@ -15,8 +15,8 @@ use crate::{Context, Report};
 ///
 /// ```rust
 /// # fn has_permission(_: (), _: ()) -> bool { true }
-/// # fn get_user() -> Result<(), AccessError> { Ok(()) }
-/// # fn get_resource() -> Result<(), AccessError> { Ok(()) }
+/// # fn get_user() -> BigResult<(), AccessError> { Ok(()) }
+/// # fn get_resource() -> BigResult<(), AccessError> { Ok(()) }
 /// # #[derive(Debug)] enum AccessError { PermissionDenied((), ()) }
 /// # impl core::fmt::Display for AccessError {
 /// #    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }

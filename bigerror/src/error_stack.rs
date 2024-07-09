@@ -47,14 +47,14 @@
 //!     Trivial,
 //! }
 //!
-//! type AppResult<T> = Result<T, AppError>;
+//! type AppResult<T> = BigResult<T, AppError>;
 //!
 //! // Errors can also be a plain `struct`, somewhat like in `anyhow`.
 //! #[derive(Error, Debug)]
 //! #[error("logic error")]
 //! struct LogicError;
 //!
-//! type LogicResult<T> = Result<T, LogicError>;
+//! type LogicResult<T> = BigResult<T, LogicError>;
 //!
 //! fn do_logic() -> LogicResult<()> {
 //!     Ok(())
@@ -73,35 +73,7 @@
 //!
 //! ## Where to use a Report
 //!
-//! [`Report`] has been designed to be used as the [`Err`] variant of a `BigResult`.
-//! This crate provides a [`Result<E, C>`] type alias for convenience
-//! which uses [`Report<C>`] as the [`Err`] variant and can be used as a return type:
-//!
-//! ```rust
-//! # fn has_permission(_: (), _: ()) -> bool { true }
-//! # fn get_user() -> Result<(), AccessError> { Ok(()) }
-//! # fn get_resource() -> Result<(), AccessError> { Ok(()) }
-//! # #[derive(Debug)] enum AccessError { PermissionDenied((), ()) }
-//! # impl core::fmt::Display for AccessError {
-//! #    fn fmt(&self, _: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { Ok(()) }
-//! # }
-//! # impl bigerror::Context for AccessError {}
-//! use bigerror::{ensure, BigResult};
-//!
-//! fn main() -> BigResult<(), AccessError> {
-//!     let user = get_user()?;
-//!     let resource = get_resource()?;
-//!
-//!     ensure!(
-//!         has_permission(user, resource),
-//!         AccessError::PermissionDenied(user, resource)
-//!     );
-//!
-//!     # const _: &str = stringify! {
-//!     ...
-//!     # }; Ok(())
-//! }
-//! ```
+//! See [`result::BigResult`]
 //!
 //! ### Initializing a Report
 //!
@@ -161,8 +133,7 @@
 //! // It's also possible to implement `Error` instead.
 //! impl Context for ParseConfigError {}
 //!
-//! // For clarification, this example is not using `error_stack::BigResult`.
-//! fn parse_config(path: impl AsRef<Path>) -> Result<Config, ParseConfigError> {
+//! fn parse_config(path: impl AsRef<Path>) -> BigResult<Config, ParseConfigError> {
 //!     let content = fs::read_to_string(path.as_ref())
 //!         .change_context(ParseConfigError)?;
 //!
@@ -351,7 +322,7 @@
 //! # #![cfg_attr(not(nightly), allow(unused_variables, dead_code))]
 //! # use bigerror::error_stack::BigResult;
 //! # struct Suggestion(&'static str);
-//! # fn parse_config(_: &str) -> Result<(), std::io::Error> { Ok(()) }
+//! # fn parse_config(_: &str) -> BigResult<(), std::io::Error> { Ok(()) }
 //! fn main() {
 //!     if let Err(report) = parse_config("config.json") {
 //!         # #[cfg(nightly)]
