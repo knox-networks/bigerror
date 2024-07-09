@@ -7,7 +7,7 @@ use crate::{
     ty, AttachExt, Context, Report, Reportable,
 };
 
-use crate::{attachment::DisplayDuration, reportable, Field};
+use crate::{attachment::DisplayDuration, Field};
 
 /// Used to enacpsulate opaque `dyn std::error::Error` types
 #[derive(Debug, thiserror::Error)]
@@ -19,8 +19,6 @@ pub struct BoxError(Box<dyn std::error::Error + 'static + Send + Sync>);
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
 pub struct BoxCoreError(Box<dyn CoreError>);
-#[derive(Debug, thiserror::Error)]
-#[error("DecodeError")]
 /// Represents errors emitted during while processing bytes into an object.
 /// * byte types can can be represented by objects such as `&[u8]`, `bytes::Bytes`, and `Vec<u8>`
 /// * used by codecs/serializers/deserializers
@@ -30,99 +28,72 @@ pub struct BoxCoreError(Box<dyn CoreError>);
 ///  * https://docs.rs/tonic/latest/tonic/codec/trait.Encoder.html
 ///  * https://docs.rs/rkyv/latest/rkyv/ser/serializers/type.AllocSerializer.html
 ///  * https://docs.rs/serde/latest/serde/trait.Serializer.html
+#[crate::derive_ctx]
 pub struct DecodeError;
-reportable!(DecodeError);
 
 /// Emitted while turning an object into bytes.
 /// See [`DecodeError`] for more details.
-#[derive(Debug, thiserror::Error)]
-#[error("EncodeError")]
+#[crate::derive_ctx]
 pub struct EncodeError;
-reportable!(EncodeError);
+
+#[crate::derive_ctx]
+pub struct DeriveError;
 
 /// Emitted during an authorization/verification check
-#[derive(Debug, thiserror::Error)]
-#[error("AuthError")]
+#[crate::derive_ctx]
 pub struct AuthError;
-reportable!(AuthError);
 
-#[derive(Debug, thiserror::Error)]
-#[error("NetworkError")]
+#[crate::derive_ctx]
 pub struct NetworkError;
-reportable!(NetworkError);
 
 /// Emitted while processing a string (UTF-8 or otherwise).
 /// Usually associated with the [`std::str::FromStr`] trait and the `.parse::<SomeT>()` method
-#[derive(Debug, thiserror::Error)]
-#[error("ParseError")]
+#[crate::derive_ctx]
 pub struct ParseError;
-reportable!(ParseError);
 
 /// Represents the conversion of an `Option::<T>::None` into a [`Report`]
-#[derive(Debug, thiserror::Error)]
-#[error("NotFound")]
+#[crate::derive_ctx]
 pub struct NotFound;
-reportable!(NotFound);
 
-#[derive(Debug, thiserror::Error)]
-#[error("DbError")]
+#[crate::derive_ctx]
 pub struct DbError;
-reportable!(DbError);
 
 /// An error that is related to filesystem operations such as those in [`std::fs`]
-#[derive(Debug, thiserror::Error)]
-#[error("FsError")]
+#[crate::derive_ctx]
 pub struct FsError;
-reportable!(FsError);
 
 /// Emitted during the startup/provisioning phase of a program
-#[derive(Debug, thiserror::Error)]
-#[error("SetupError")]
+#[crate::derive_ctx]
 pub struct SetupError;
-reportable!(SetupError);
 
 /// Emitted during transformations between [non scalar](https://en.wikipedia.org/w/index.php?title=Scalar_processor&useskin=vector#Scalar_data_type)
 /// objects (such as structs, enums, and unions).
-#[derive(Debug, thiserror::Error)]
-#[error("ConversionError")]
+#[crate::derive_ctx]
 pub struct ConversionError;
-reportable!(ConversionError);
 
-#[derive(Debug, thiserror::Error)]
-#[error("InvalidInput")]
+#[crate::derive_ctx]
 pub struct InvalidInput;
-reportable!(InvalidInput);
 
-#[derive(Debug, thiserror::Error)]
-#[error("InvalidStatus")]
+#[crate::derive_ctx]
 pub struct InvalidStatus;
-reportable!(InvalidStatus);
 
-#[derive(Debug, thiserror::Error)]
-#[error("InvalidState")]
+#[crate::derive_ctx]
 pub struct InvalidState;
-reportable!(InvalidState);
 
 /// Emitted during runtime, indicates problems with input/default settings
-#[derive(Debug, thiserror::Error)]
-#[error("ConfigError")]
+#[crate::derive_ctx]
 pub struct ConfigError;
-reportable!(ConfigError);
 
 /// Typically emitted by a `build.rs` failure
-#[derive(Debug, thiserror::Error)]
-#[error("BuildError")]
+#[crate::derive_ctx]
 pub struct BuildError;
-reportable!(BuildError);
 
 #[derive(Debug, thiserror::Error)]
 #[error("{}", Field::new("timeout", DisplayDuration(*.0)))]
 pub struct Timeout(pub Duration);
 
-#[derive(Debug, thiserror::Error)]
-#[error("AssertionError")]
+#[crate::derive_ctx]
 pub struct AssertionError;
-reportable!(AssertionError);
 
 pub trait CoreError: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
 

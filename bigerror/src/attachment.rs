@@ -2,10 +2,9 @@ use std::{any, fmt, time::Duration};
 
 use tracing::error;
 
+use crate::reportable;
 pub use crate::{Context, Report, ResultExt};
 pub use thiserror;
-
-use crate::reportable;
 
 pub trait Display: fmt::Display + fmt::Debug + Send + Sync + 'static {}
 

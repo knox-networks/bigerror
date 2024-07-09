@@ -1,0 +1,18 @@
+[package]
+name = "bigerror_derive"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+
+[lib]
+proc-macro = true
+
+[dependencies]
+thiserror.workspace = true
+proc-macro2 = "1.0.74"
+quote = "1.0.35"
+syn = "2.0.46"
+thiserror-impl = "1.0.61"

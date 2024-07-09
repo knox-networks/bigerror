@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "bigerror",
+    "bigerror", "bigerror_derive",
     # "bigerror_dyn",
 ]
 resolver = "2"
