@@ -635,8 +635,7 @@ mod test {
     #[test]
     fn convresion_error() {
         fn output() -> Result<usize, Report<ConversionError>> {
-            "NaN"
-                .parse::<usize>()
+            report!("NaN".parse::<usize>())
                 .map_err(ConversionError::from::<&str, usize>)
                 .attach_printable(ParseError)
         }

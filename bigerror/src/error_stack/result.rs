@@ -1,4 +1,4 @@
-use core::fmt;
+use core::{fmt, result::Result};
 
 use crate::{Context, Report};
 
@@ -38,7 +38,7 @@ use crate::{Context, Report};
 ///     # }; Ok(())
 /// }
 /// ```
-pub type BigResult<T, C> = core::result::Result<T, Report<C>>;
+pub type BigResult<T, C> = Result<T, Report<C>>;
 
 /// Extension trait for [`core::result::Result`] to provide context information on
 /// [`Report`]s.
@@ -52,17 +52,14 @@ pub trait ResultExt {
     /// Adds a new attachment to the [`Report`] inside the [`BigResult`].
     ///
     /// Applies [`Report::attach`] on the [`Err`] variant, refer to it for more information.
-    fn attach<A>(self, attachment: A) -> core::result::Result<Self::Ok, Report<Self::Context>>
+    fn attach<A>(self, attachment: A) -> Result<Self::Ok, Report<Self::Context>>
     where
         A: Send + Sync + 'static;
 
     /// Lazily adds a new attachment to the [`Report`] inside the [`BigResult`].
     ///
     /// Applies [`Report::attach`] on the [`Err`] variant, refer to it for more information.
-    fn attach_lazy<A, F>(
-        self,
-        attachment: F,
-    ) -> core::result::Result<Self::Ok, Report<Self::Context>>
+    fn attach_lazy<A, F>(self, attachment: F) -> Result<Self::Ok, Report<Self::Context>>
     where
         A: Send + Sync + 'static,
         F: FnOnce() -> A;
@@ -71,10 +68,7 @@ pub trait ResultExt {
     ///
     /// Applies [`Report::attach_printable`] on the [`Err`] variant, refer to it for more
     /// information.
-    fn attach_printable<A>(
-        self,
-        attachment: A,
-    ) -> core::result::Result<Self::Ok, Report<Self::Context>>
+    fn attach_printable<A>(self, attachment: A) -> Result<Self::Ok, Report<Self::Context>>
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static;
 
@@ -82,10 +76,7 @@ pub trait ResultExt {
     ///
     /// Applies [`Report::attach_printable`] on the [`Err`] variant, refer to it for more
     /// information.
-    fn attach_printable_lazy<A, F>(
-        self,
-        attachment: F,
-    ) -> core::result::Result<Self::Ok, Report<Self::Context>>
+    fn attach_printable_lazy<A, F>(self, attachment: F) -> Result<Self::Ok, Report<Self::Context>>
     where
         A: fmt::Display + fmt::Debug + Send + Sync + 'static,
         F: FnOnce() -> A;
@@ -93,20 +84,20 @@ pub trait ResultExt {
     /// Changes the context of the [`Report`] inside the [`BigResult`].
     ///
     /// Applies [`Report::change_context`] on the [`Err`] variant, refer to it for more information.
-    fn change_context<C>(self, context: C) -> core::result::Result<Self::Ok, Report<C>>
+    fn change_context<C>(self, context: C) -> Result<Self::Ok, Report<C>>
     where
         C: Context;
 
     /// Lazily changes the context of the [`Report`] inside the [`BigResult`].
     ///
     /// Applies [`Report::change_context`] on the [`Err`] variant, refer to it for more information.
-    fn change_context_lazy<C, F>(self, context: F) -> core::result::Result<Self::Ok, Report<C>>
+    fn change_context_lazy<C, F>(self, context: F) -> Result<Self::Ok, Report<C>>
     where
         C: Context,
         F: FnOnce() -> C;
 }
 
-impl<T, C> ResultExt for core::result::Result<T, C>
+impl<T, C> ResultExt for Result<T, C>
 where
     C: Context,
 {
