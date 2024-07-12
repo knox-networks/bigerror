@@ -31,7 +31,7 @@ use attachment::{Dbg, Debug, Display};
 use tracing::{debug, error, info, trace, warn, Level};
 
 pub(crate) use bigerror_derive::derive_ctx;
-pub use bigerror_derive::Context;
+pub use bigerror_derive::ThinContext;
 pub use error_stack::{
     iter, AttachmentKind, BigResult, Context, Frame, FrameKind, FutureExt, IntoReportCompat,
     Report, ResultExt,
@@ -52,9 +52,9 @@ pub fn init_no_ansi() {
     Report::set_color_mode(ColorMode::None);
 }
 
-/// `Reportable` behaves as an `error_stack::ContextExt`
+/// `ThinContext` behaves as an `error_stack::ContextExt`
 /// ideally used for zero sized errors or ones that hold a `'static` ref/value
-pub trait Reportable
+pub trait ThinContext
 where
     Self: Sized + Context,
 {
@@ -128,13 +128,13 @@ where
 
 /// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
 pub trait ReportAs<T> {
-    fn report_as<C: Reportable>(self) -> Result<T, Report<C>>;
+    fn report_as<C: ThinContext>(self) -> Result<T, Report<C>>;
 }
 
 impl<T, E: Context> ReportAs<T> for Result<T, E> {
     #[inline]
     #[track_caller]
-    fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
+    fn report_as<C: ThinContext>(self) -> Result<T, Report<C>> {
         // TODO #[track_caller] on closure
         // https://github.com/rust-lang/rust/issues/87417
         // self.map_err(|e| Report::new(C::value()).attach_printable(e))
@@ -146,28 +146,28 @@ impl<T, E: Context> ReportAs<T> for Result<T, E> {
 }
 
 pub trait IntoContext {
-    fn into_ctx<C2: Reportable>(self) -> Report<C2>;
+    fn into_ctx<C2: ThinContext>(self) -> Report<C2>;
 }
 
 impl<C: Context> IntoContext for Report<C> {
     #[inline]
     #[track_caller]
-    fn into_ctx<C2: Reportable>(self) -> Report<C2> {
+    fn into_ctx<C2: ThinContext>(self) -> Report<C2> {
         self.change_context(C2::value())
     }
 }
 
 pub trait ResultIntoContext: ResultExt {
-    fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
+    fn into_ctx<C2: ThinContext>(self) -> Result<Self::Ok, Report<C2>>;
     // Result::and_then
     fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(Self::Ok) -> Result<U, Report<C2>>;
     // Result::map
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(Self::Ok) -> U;
 }
 
@@ -177,7 +177,7 @@ where
 {
     #[inline]
     #[track_caller]
-    fn into_ctx<C2: Reportable>(self) -> Result<T, Report<C2>> {
+    fn into_ctx<C2: ThinContext>(self) -> Result<T, Report<C2>> {
         self.change_context(C2::value())
     }
 
@@ -185,7 +185,7 @@ where
     #[track_caller]
     fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(T) -> Result<U, Report<C2>>,
     {
         match self {
@@ -198,7 +198,7 @@ where
     #[track_caller]
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(T) -> U,
     {
         match self {
@@ -208,11 +208,11 @@ where
     }
 }
 
-// TODO convert to #[derive(Reportable)]
+// TODO convert to #[derive(ThinContext)]
 #[macro_export]
 macro_rules! reportable {
     ($context:ident) => {
-        impl $crate::Reportable for $context {
+        impl $crate::ThinContext for $context {
             fn value() -> Self {
                 $context
             }

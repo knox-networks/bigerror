@@ -4,7 +4,7 @@ use crate::{
     attachment::{
         FromTo, Unsupported, {self},
     },
-    ty, AttachExt, Context, Report, Reportable,
+    ty, AttachExt, Context, Report, ThinContext,
 };
 
 use crate::{attachment::DisplayDuration, Field};
@@ -95,7 +95,7 @@ pub struct Timeout(pub Duration);
 #[crate::derive_ctx]
 pub struct AssertionError;
 
-#[derive(Context)]
+#[derive(ThinContext)]
 #[bigerror(crate)]
 pub struct Assertion2Error;
 

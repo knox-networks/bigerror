@@ -12,20 +12,20 @@ pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
             if !matches!(data_struct.fields, Fields::Unit) {
                 return Err(Error::new_spanned(
                     &input.ident,
-                    "struct must be a zero-sized-type to implement `Context`",
+                    "struct must be a zero-sized-type to implement `ThinContext`",
                 ));
             }
         }
         Data::Enum(_) => {
             return Err(Error::new_spanned(
                 &input.ident,
-                "enum `Context` derives are currently unsupported",
+                "enum `ThinContext` derives are currently unsupported",
             ));
         }
         Data::Union(_) => {
             return Err(Error::new_spanned(
                 &input.ident,
-                "union `Context` derives are currently unsupported",
+                "union `ThinContext` derives are currently unsupported",
             ));
         }
     }
@@ -44,7 +44,7 @@ pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
                 f.write_str(stringify!(#name))
             }
         }
-        impl #bigerror::Reportable for #name {
+        impl #bigerror::ThinContext for #name {
             fn value() -> Self {
                 #name
             }

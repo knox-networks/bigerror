@@ -4,7 +4,7 @@ use core::fmt;
 #[cfg(all(not(nightly), feature = "std"))]
 use std::error::Error;
 
-use crate::{error_stack::Report, Reportable};
+use crate::{error_stack::Report, ThinContext};
 
 /// Defines the current context of a [`Report`].
 ///
@@ -80,7 +80,7 @@ pub trait Context: fmt::Display + fmt::Debug + Send + Sync + 'static {
 impl<E, C> From<E> for Report<C>
 where
     E: Context,
-    C: Reportable,
+    C: ThinContext,
 {
     #[track_caller]
     #[inline]
