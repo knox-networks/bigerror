@@ -157,6 +157,13 @@ impl ConversionError {
     pub fn from<F, T>(ctx: impl Context) -> Report<Self> {
         Self::from_ctx(ctx).attach_printable(FromTo(ty!(F), ty!(T)))
     }
+
+    #[track_caller]
+    pub fn set<F, T>(report: Report<impl Context>) -> Report<Self> {
+        report
+            .change_context(Self)
+            .attach_printable(FromTo(ty!(F), ty!(T)))
+    }
 }
 
 impl NotFound {

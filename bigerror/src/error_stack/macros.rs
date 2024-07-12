@@ -31,7 +31,7 @@ pub mod __private {
                 Reporter
             }
         }
-        impl<T> ReportTag for Report<T> {}
+        impl<C> ReportTag for Report<C> {}
 
         pub trait ContextTag {
             #[inline]
@@ -39,13 +39,13 @@ pub mod __private {
                 ContextReporter
             }
         }
-        impl<T> ContextTag for &T where T: ?Sized + Context {}
+        impl<C> ContextTag for &C where C: ?Sized + Context {}
         use crate::{Context, Report};
 
         pub struct Reporter;
         impl Reporter {
             #[inline]
-            pub const fn report<T>(self, report: Report<T>) -> Report<T> {
+            pub const fn report<C>(self, report: Report<C>) -> Report<C> {
                 report
             }
         }
@@ -58,10 +58,28 @@ pub mod __private {
                 Report::new(context)
             }
         }
+
+        pub trait ResultTag {
+            #[inline]
+            fn __kind(&self) -> ResultReporter {
+                ResultReporter
+            }
+        }
+
+        impl<T, C> ResultTag for &Result<T, C> where C: Sized + Context {}
+
+        pub struct ResultReporter;
+        impl ResultReporter {
+            #[inline]
+            #[track_caller]
+            pub fn report<C: Context, T>(self, result: Result<T, C>) -> Result<T, Report<C>> {
+                result.map_err(|context| Report::new(context))
+            }
+        }
     }
 
     // Import anonymously to allow calling `__kind` but forbid implementing the tag-traits.
-    pub use self::specialization::{ContextTag as _, ReportTag as _};
+    pub use self::specialization::{ContextTag as _, ReportTag as _, ResultTag as _};
 }
 
 /// Creates a [`Report`] from the given parameters.

@@ -37,21 +37,16 @@ impl Builder {
             Ok(())
         }
     }
-    fn crate_path(&self) -> Path {
-        self.crate_path
-            .clone()
-            .unwrap_or_else(|| parse_quote! { ::bigerror })
-    }
 }
 
 pub struct Attributes {
+    #[allow(unused)]
     pub display: LitStr,
     pub crate_path: Path,
 }
 impl Attributes {
     pub fn parse(input: &DeriveInput) -> Result<Attributes, Error> {
         let mut builder = Builder::default();
-        let display: Option<LitStr> = None;
 
         for attr in input.attrs.iter() {
             if attr.path().is_ident("display") {

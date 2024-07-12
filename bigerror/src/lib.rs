@@ -566,12 +566,6 @@ mod test {
     pub struct MyError;
     reportable!(MyError);
 
-    #[derive(Debug, thiserror::Error)]
-    pub enum Error {
-        #[error("{0:?}")]
-        Report(Report<MyError>),
-    }
-
     #[derive(Default)]
     struct MyStruct {
         my_field: Option<()>,
@@ -603,9 +597,6 @@ mod test {
             }
         };
     }
-    fn output() -> Result<usize, Report<MyError>> {
-        Ok("NaN".parse::<usize>()?)
-    }
 
     #[test]
     fn implicit_from() {
@@ -633,11 +624,9 @@ mod test {
     }
 
     #[test]
-    fn convresion_error() {
-        fn output() -> Result<usize, Report<ConversionError>> {
-            report!("NaN".parse::<usize>())
-                .map_err(ConversionError::from::<&str, usize>)
-                .attach_printable(ParseError)
+    fn result_report_macro() {
+        fn output() -> Result<usize, Report<ParseError>> {
+            report!("NaN".parse::<usize>()).into_ctx()
         }
 
         assert_err!(output().change_context(MyError));
