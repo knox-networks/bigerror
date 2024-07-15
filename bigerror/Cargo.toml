@@ -28,7 +28,7 @@ tonic = { workspace = true, optional = true }
 tonic-types = { workspace = true, optional = true }
 tracing-error = { workspace = true, optional = true, default-features = false }
 tracing.workspace = true
-bigerror_derive = { version = "0.9.0", path = "../bigerror_derive" }
+bigerror_derive = { path = "../bigerror_derive" }
 
 [dev-dependencies]
 serde = { workspace = true, features = ["derive"] }
