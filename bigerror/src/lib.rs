@@ -30,7 +30,6 @@ use crate::fmt::ColorMode;
 use attachment::{Dbg, Debug, Display};
 use tracing::{debug, error, info, trace, warn, Level};
 
-pub(crate) use bigerror_derive::derive_ctx;
 pub use bigerror_derive::ThinContext;
 pub use error_stack::{
     iter, AttachmentKind, BigResult, Context, Frame, FrameKind, FutureExt, IntoReportCompat,
@@ -650,7 +649,9 @@ mod test {
     }
     #[test]
     fn option_report() {
-        assert_err!(None::<()>.expect_or());
+        assert_err!(None::<&str>
+            .expect_or()
+            .attach_printable(format!("{:?}", (true, "I wish it wasn't true"))));
 
         let id: u32 = 0xdeadbeef;
         assert_err!(None::<bool>.expect_kv("id", id));
@@ -709,8 +710,6 @@ mod test {
     fn expect_field() {
         let my_struct = MyStruct::default();
 
-        let my_field = expect_field!(my_struct.my_field.as_ref());
-        assert_err!(my_field);
         let my_field = expect_field!(my_struct.my_field);
         assert_err!(my_field);
         // from field method

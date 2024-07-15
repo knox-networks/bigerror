@@ -28,76 +28,91 @@ pub struct BoxCoreError(Box<dyn CoreError>);
 ///  * https://docs.rs/tonic/latest/tonic/codec/trait.Encoder.html
 ///  * https://docs.rs/rkyv/latest/rkyv/ser/serializers/type.AllocSerializer.html
 ///  * https://docs.rs/serde/latest/serde/trait.Serializer.html
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct DecodeError;
 
 /// Emitted while turning an object into bytes.
 /// See [`DecodeError`] for more details.
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct EncodeError;
 
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct DeriveError;
 
 /// Emitted during an authorization/verification check
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct AuthError;
 
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct NetworkError;
 
 /// Emitted while processing a string (UTF-8 or otherwise).
 /// Usually associated with the [`std::str::FromStr`] trait and the `.parse::<SomeT>()` method
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct ParseError;
 
 /// Represents the conversion of an `Option::<T>::None` into a [`Report`]
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct NotFound;
 
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct DbError;
 
 /// An error that is related to filesystem operations such as those in [`std::fs`]
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct FsError;
 
 /// Emitted during the startup/provisioning phase of a program
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct SetupError;
 
 /// Emitted during transformations between [non scalar](https://en.wikipedia.org/w/index.php?title=Scalar_processor&useskin=vector#Scalar_data_type)
 /// objects (such as structs, enums, and unions).
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
+
 pub struct ConversionError;
 
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
+
 pub struct InvalidInput;
 
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct InvalidStatus;
 
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct InvalidState;
 
 /// Emitted during runtime, indicates problems with input/default settings
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct ConfigError;
 
 /// Typically emitted by a `build.rs` failure
-#[crate::derive_ctx]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct BuildError;
 
 #[derive(Debug, thiserror::Error)]
 #[error("{}", Field::new("timeout", DisplayDuration(*.0)))]
 pub struct Timeout(pub Duration);
 
-#[crate::derive_ctx]
-pub struct AssertionError;
-
 #[derive(ThinContext)]
 #[bigerror(crate)]
-pub struct Assertion2Error;
+pub struct AssertionError;
 
 pub trait CoreError: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
 
