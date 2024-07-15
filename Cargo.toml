@@ -35,3 +35,7 @@ tracing = "0.1"
 tracing-error = { version = "0.2", default-features = false }
 tracing-subscriber = "0.3.18"
 trybuild = "1.0.93"
+proc-macro2 = "1.0.74"
+quote = "1.0.35"
+syn = "2.0.46"
+thiserror-impl = "1.0.61"
