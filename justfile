@@ -8,12 +8,12 @@ fmt:
     rustup run nightly cargo fmt -- \
       --config-path ./fmt/rustfmt.toml
 
-[group("lint"), no_cd]
+[no-cd, group("lint")]
 lint *args:
     cargo clippy --all-targets --all-features --no-deps {{args}} -- -D warnings
 
 # Run clippy fix and rustfmt afterwards
-[no_cd]
+[no-cd]
 fix *args: && fmt
   cargo clippy --fix --all-targets --all-features {{args}}
 

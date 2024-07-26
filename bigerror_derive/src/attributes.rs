@@ -48,7 +48,7 @@ impl Attributes {
     pub fn parse(input: &DeriveInput) -> Result<Attributes, Error> {
         let mut builder = Builder::default();
 
-        for attr in input.attrs.iter() {
+        for attr in &input.attrs {
             if attr.path().is_ident("display") {
                 builder.display = Some(attr.parse_args()?);
             }

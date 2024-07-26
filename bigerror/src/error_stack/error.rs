@@ -16,7 +16,7 @@ impl<C> ReportError<C> {
 
     pub(crate) const fn from_ref(report: &Report<C>) -> &Self {
         // SAFETY: `ReportError` is a `repr(transparent)` wrapper around `Report`.
-        unsafe { &*(report as *const Report<C>).cast() }
+        unsafe { &*std::ptr::from_ref::<Report<C>>(report).cast() }
     }
 }
 

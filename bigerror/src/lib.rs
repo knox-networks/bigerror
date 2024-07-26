@@ -568,7 +568,7 @@ mod test {
     #[derive(Default)]
     struct MyStruct {
         my_field: Option<()>,
-        _string: String,
+        string: String,
     }
 
     impl MyStruct {
@@ -653,7 +653,7 @@ mod test {
             .expect_or()
             .attach_printable(format!("{:?}", (true, "I wish it wasn't true"))));
 
-        let id: u32 = 0xdeadbeef;
+        let id: u32 = 0xdead_beef;
         assert_err!(None::<bool>.expect_kv("id", id));
         assert!(Some(true).expect_kv("id", id).unwrap());
 
@@ -720,7 +720,7 @@ mod test {
     // this is meant to be a compile time test of the `__field!` macro
     fn __field() {
         let my_struct = MyStruct::default();
-        __field!(MyStruct::__field::<&str> | &my_struct._string);
+        __field!(MyStruct::__field::<&str> | &my_struct.string);
     }
 
     #[test]
@@ -735,8 +735,6 @@ mod test {
 
     #[test]
     fn attach_variant() {
-        let my_number = 2;
-        let other_number = 3;
         fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
             if other != mine {
                 bail!(InvalidInput::attach("expected my number!")
@@ -745,6 +743,8 @@ mod test {
             }
             Ok(())
         }
+        let my_number = 2;
+        let other_number = 3;
         assert_err!(compare(my_number, other_number));
     }
 
@@ -752,8 +752,6 @@ mod test {
     // but displays lazy allocation of attachment
     #[test]
     fn attach_kv_macro() {
-        let my_number = 2;
-        let other_number = 3;
         fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
             if other != mine {
                 return Err(InvalidInput::attach("expected my number!"))
@@ -762,6 +760,8 @@ mod test {
             }
             Ok(())
         }
+        let my_number = 2;
+        let other_number = 3;
         assert_err!(compare(my_number, other_number));
     }
 
