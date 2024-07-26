@@ -40,6 +40,4 @@ syn = "2.0.46"
 thiserror-impl = "1.0.61"
 
 [workspace.lints.clippy]
-# defer nightly handling for now
 unexpected_cfgs = "allow"
-

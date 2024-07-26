@@ -76,3 +76,6 @@ doc-scrape-examples = true
 [[test]]
 name = "common"
 test = false
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(nightly)'] }
