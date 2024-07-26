@@ -8,9 +8,14 @@ fmt:
     rustup run nightly cargo fmt -- \
       --config-path ./fmt/rustfmt.toml
 
+[no-cd, group("lint")]
+lint *args:
+    cargo clippy --all-targets --all-features --no-deps {{args}} -- -D warnings
+
 # Run clippy fix and rustfmt afterwards
+[no-cd]
 fix *args: && fmt
-  cd {{invocation_directory()}}; cargo clippy --fix --all-targets --all-features {{args}}
+  cargo clippy --fix --all-targets --all-features {{args}}
 
 
 # Prints the error stack for a given test to stdout
