@@ -569,7 +569,7 @@ mod test {
     #[derive(Default)]
     struct MyStruct {
         my_field: Option<()>,
-        string: String,
+        _string: String,
     }
 
     impl MyStruct {
@@ -721,7 +721,7 @@ mod test {
     // this is meant to be a compile time test of the `__field!` macro
     fn __field() {
         let my_struct = MyStruct::default();
-        __field!(MyStruct::__field::<&str> | &my_struct.string);
+        __field!(MyStruct::__field::<&str> | &my_struct._string);
     }
 
     #[test]

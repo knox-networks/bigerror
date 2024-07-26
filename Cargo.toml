@@ -37,6 +37,7 @@ trybuild = "1.0.93"
 proc-macro2 = "1.0.74"
 quote = "1.0.35"
 syn = "2.0.46"
+bigerror-derive = { path = "./bigerror_derive", version = "0.9.0-alpha" }
 thiserror-impl = "1.0.61"
 
 [workspace.lints.clippy]
