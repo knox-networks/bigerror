@@ -220,6 +220,7 @@ macro_rules! reportable {
 }
 
 pub trait AttachExt {
+    #[must_use]
     fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
         K: Display,
