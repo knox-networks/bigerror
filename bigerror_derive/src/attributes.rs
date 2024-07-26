@@ -9,7 +9,7 @@ fn try_set_attribute<T: ToTokens>(
     if attribute.is_some() {
         return Err(Error::new_spanned(
             value,
-            format!("{} already specified", name),
+            format!("{name} already specified"),
         ));
     }
     *attribute = Some(value);
