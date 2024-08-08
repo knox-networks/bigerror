@@ -108,7 +108,7 @@ pub trait ReportAs<T> {
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>>;
 }
 
-impl<T, E: Context> ReportAs<T> for Result<T, E> {
+impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
     #[inline]
     #[track_caller]
     fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
@@ -117,7 +117,23 @@ impl<T, E: Context> ReportAs<T> for Result<T, E> {
         // self.map_err(|e| Report::new(C::value()).attach_printable(e))
         match self {
             Ok(v) => Ok(v),
-            Err(e) => Err(Report::new(C::value()).attach_printable(e)),
+            Err(e) => {
+                let ty = std::any::type_name_of_val(&e);
+                let mut external_report = Report::new(e);
+                let mut curr_source = external_report.current_context().source();
+                let mut child_errs = vec![];
+                while let Some(child_err) = curr_source {
+                    let new_err = format!("{child_err}");
+                    if Some(&new_err) != child_errs.last() {
+                        child_errs.push(new_err);
+                    }
+                    curr_source = child_err.source();
+                }
+                while let Some(child_err) = child_errs.pop() {
+                    external_report = external_report.attach_printable(child_err);
+                }
+                Err(Report::new(C::value()).attach_kv(ty, Dbg(external_report)))
+            }
         }
     }
 }
@@ -195,6 +211,7 @@ macro_rules! reportable {
                 $crate::Report::new(ctx).change_context(Self)
             }
 
+            #[track_caller]
             fn value() -> Self {
                 $context
             }
