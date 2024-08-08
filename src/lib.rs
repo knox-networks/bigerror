@@ -119,7 +119,7 @@ impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
             Ok(v) => Ok(v),
             Err(e) => {
                 let ty = std::any::type_name_of_val(&e);
-                let mut external_report = Report::new(e);
+                let mut external_report = Report::new(e).attach_printable(ty);
                 let mut curr_source = external_report.current_context().source();
                 let mut child_errs = vec![];
                 while let Some(child_err) = curr_source {
@@ -132,7 +132,7 @@ impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
                 while let Some(child_err) = child_errs.pop() {
                     external_report = external_report.attach_printable(child_err);
                 }
-                Err(Report::new(C::value()).attach_kv(ty, Dbg(external_report)))
+                Err(external_report.into_ctx())
             }
         }
     }
