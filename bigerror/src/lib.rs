@@ -58,6 +58,9 @@ where
     Self: Sized + Context,
 {
     fn value() -> Self;
+    fn new() -> Report<Self> {
+        Report::new(Self::value())
+    }
     fn from_ctx<C: Context>(ctx: C) -> Report<Self> {
         Report::new(ctx).change_context(Self::value())
     }
@@ -148,7 +151,7 @@ pub trait IntoContext {
     fn into_ctx<C2: ThinContext>(self) -> Report<C2>;
 }
 
-impl<C: Context> IntoContext for Report<C> {
+impl<C> IntoContext for Report<C> {
     #[inline]
     #[track_caller]
     fn into_ctx<C2: ThinContext>(self) -> Report<C2> {
