@@ -419,7 +419,9 @@ where
     #[inline]
     #[track_caller]
     fn on_err(self, op: impl FnOnce()) -> Self {
-        op();
+        if self.is_err() {
+            op();
+        }
         self
     }
 }
