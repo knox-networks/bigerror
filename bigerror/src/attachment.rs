@@ -2,7 +2,7 @@ use std::{any, fmt, time::Duration};
 
 use tracing::error;
 
-use crate::reportable;
+use crate::ThinContext;
 pub use crate::{Context, Report, ResultExt};
 pub use thiserror;
 
@@ -109,10 +109,9 @@ macro_rules! ty {
     };
 }
 
-#[derive(Debug, thiserror::Error)]
-#[error("already present")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct AlreadyPresent;
-reportable!(AlreadyPresent);
 
 #[derive(Debug, thiserror::Error)]
 #[error("missing")]

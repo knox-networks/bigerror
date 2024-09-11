@@ -57,12 +57,12 @@ pub trait ThinContext
 where
     Self: Sized + Context,
 {
-    fn value() -> Self;
+    const VALUE: Self;
     fn new() -> Report<Self> {
-        Report::new(Self::value())
+        Report::new(Self::VALUE)
     }
     fn from_ctx<C: Context>(ctx: C) -> Report<Self> {
-        Report::new(ctx).change_context(Self::value())
+        Report::new(ctx).change_context(Self::VALUE)
     }
     // TODO
     // fn report_dyn_err(err: impl std::error::Error + 'static + Send + Sync)
@@ -72,7 +72,7 @@ where
     where
         A: Display,
     {
-        Report::new(Self::value()).attach_printable(value)
+        Report::new(Self::VALUE).attach_printable(value)
     }
     #[track_caller]
     fn attach_dbg<A>(value: A) -> Report<Self>
@@ -139,10 +139,10 @@ impl<T, E: Context> ReportAs<T> for Result<T, E> {
     fn report_as<C: ThinContext>(self) -> Result<T, Report<C>> {
         // TODO #[track_caller] on closure
         // https://github.com/rust-lang/rust/issues/87417
-        // self.map_err(|e| Report::new(C::value()).attach_printable(e))
+        // self.map_err(|e| Report::new(C::VALUE).attach_printable(e))
         match self {
             Ok(v) => Ok(v),
-            Err(e) => Err(Report::new(C::value()).attach_printable(e)),
+            Err(e) => Err(Report::new(C::VALUE).attach_printable(e)),
         }
     }
 }
@@ -155,7 +155,7 @@ impl<C> IntoContext for Report<C> {
     #[inline]
     #[track_caller]
     fn into_ctx<C2: ThinContext>(self) -> Report<C2> {
-        self.change_context(C2::value())
+        self.change_context(C2::VALUE)
     }
 }
 
@@ -180,7 +180,7 @@ where
     #[inline]
     #[track_caller]
     fn into_ctx<C2: ThinContext>(self) -> Result<T, Report<C2>> {
-        self.change_context(C2::value())
+        self.change_context(C2::VALUE)
     }
 
     #[inline]
@@ -192,7 +192,7 @@ where
     {
         match self {
             Ok(t) => op(t),
-            Err(ctx) => Err(ctx.change_context(C2::value())),
+            Err(ctx) => Err(ctx.change_context(C2::VALUE)),
         }
     }
 
@@ -205,21 +205,9 @@ where
     {
         match self {
             Ok(t) => Ok(op(t)),
-            Err(ctx) => Err(ctx.change_context(C2::value())),
+            Err(ctx) => Err(ctx.change_context(C2::VALUE)),
         }
     }
-}
-
-// TODO convert to #[derive(ThinContext)]
-#[macro_export]
-macro_rules! reportable {
-    ($context:ident) => {
-        impl $crate::ThinContext for $context {
-            fn value() -> Self {
-                $context
-            }
-        }
-    };
 }
 
 pub trait AttachExt {
@@ -564,10 +552,9 @@ mod test {
 
     use super::*;
 
-    #[derive(Debug, thiserror::Error)]
-    #[error("MyError")]
+    #[derive(ThinContext)]
+    #[bigerror(crate)]
     pub struct MyError;
-    reportable!(MyError);
 
     #[derive(Default)]
     struct MyStruct {

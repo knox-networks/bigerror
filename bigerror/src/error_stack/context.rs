@@ -85,7 +85,7 @@ where
     #[track_caller]
     #[inline]
     fn from(err: E) -> Self {
-        Report::new(err).change_context(C::value())
+        Report::new(err).change_context(C::VALUE)
     }
 }
 

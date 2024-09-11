@@ -5,7 +5,7 @@ use syn::{Data, DeriveInput, Error, Fields};
 use crate::attributes::Attributes;
 
 pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
-    let name = &input.ident;
+    let ctx = &input.ident;
     let attributes = Attributes::parse(input)?;
     match &input.data {
         Data::Struct(data_struct) => {
@@ -33,21 +33,19 @@ pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
     let bigerror = attributes.crate_path;
     Ok(quote! {
 
-        impl std::error::Error for #name {}
-        impl ::core::fmt::Debug for #name {
+        impl std::error::Error for #ctx {}
+        impl ::core::fmt::Debug for #ctx {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                f.write_str(stringify!(#name))
+                f.write_str(stringify!(#ctx))
             }
         }
-        impl ::core::fmt::Display for #name {
+        impl ::core::fmt::Display for #ctx {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                f.write_str(stringify!(#name))
+                f.write_str(stringify!(#ctx))
             }
         }
-        impl #bigerror::ThinContext for #name {
-            fn value() -> Self {
-                #name
-            }
+        impl #bigerror::ThinContext for #ctx {
+            const VALUE: Self = #ctx;
         }
     })
 }
