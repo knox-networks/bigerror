@@ -23,6 +23,8 @@ pub mod fmt;
 #[cfg(feature = "grpc")]
 pub mod grpc;
 
+use core::{any::TypeId, panic::Location};
+
 pub use attachment::{Expectation, Field, Index, KeyValue, Type};
 pub use context::*;
 
@@ -151,10 +153,16 @@ pub trait IntoContext {
     fn into_ctx<C2: ThinContext>(self) -> Report<C2>;
 }
 
-impl<C> IntoContext for Report<C> {
+impl<C: 'static> IntoContext for Report<C> {
     #[inline]
     #[track_caller]
     fn into_ctx<C2: ThinContext>(self) -> Report<C2> {
+        if TypeId::of::<C>() == TypeId::of::<C2>() {
+            // if C and C2 are zero-sized and have the same TypeId then they are covariant
+            unsafe {
+                return std::mem::transmute::<Self, Report<C2>>(self.attach(*Location::caller()));
+            }
+        }
         self.change_context(C2::VALUE)
     }
 }
@@ -180,7 +188,10 @@ where
     #[inline]
     #[track_caller]
     fn into_ctx<C2: ThinContext>(self) -> Result<T, Report<C2>> {
-        self.change_context(C2::VALUE)
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(report) => Err(report.into_ctx()),
+        }
     }
 
     #[inline]
@@ -347,7 +358,6 @@ where
     fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
     where
         A: std::fmt::Debug + Send + Sync + 'static;
-    fn on_err(self, op: impl FnOnce()) -> Result<T, E>;
 }
 
 impl<T, E> LogError<T, E> for Result<T, E>
@@ -405,13 +415,6 @@ where
         if let Err(e) = &self {
             error!(err = ?e, "{attachment:?}");
         }
-        self
-    }
-
-    #[inline]
-    #[track_caller]
-    fn on_err(self, op: impl FnOnce()) -> Self {
-        op();
         self
     }
 }
@@ -676,12 +679,15 @@ mod test {
     fn result_into_ctx() {
         fn output() -> Result<usize, Report<MyError>> {
             "NaN"
-                .parse::<usize>()
-                .map_err(ConversionError::from::<&str, usize>)
-                .into_ctx()
+            .parse::<usize>()
+            .map_err(ConversionError::from::<&str, usize>)
+            .into_ctx()
+            .attach_printable(
+                "Report::into_ctx<MyError> will be called twice without creating an extra Frame!",
+            )
         }
 
-        assert_err!(output());
+        assert_err!(output().into_ctx::<MyError>());
     }
 
     #[test]
