@@ -1,5 +1,9 @@
 use error_stack::fmt::ColorMode;
-use std::fmt;
+use std::{
+    any::{self, Any, TypeId},
+    fmt,
+    panic::Location,
+};
 use tracing::{debug, error, info, trace, warn, Level};
 
 pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
@@ -146,6 +150,12 @@ impl<C: Context> IntoContext for Report<C> {
     #[inline]
     #[track_caller]
     fn into_ctx<C2: Reportable>(self) -> Report<C2> {
+        if TypeId::of::<C>() == TypeId::of::<C2>() {
+            // if C and C2 are zero-sized and have the same TypeId then they are covariant
+            unsafe {
+                return std::mem::transmute::<Self, Report<C2>>(self.attach(*Location::caller()));
+            }
+        }
         self.change_context(C2::value())
     }
 }
@@ -171,7 +181,11 @@ where
     #[inline]
     #[track_caller]
     fn into_ctx<C2: Reportable>(self) -> Result<T, Report<C2>> {
-        self.change_context(C2::value())
+        // Can't use `map_err` as `#[track_caller]` is unstable on closures
+        match self {
+            Ok(ok) => Ok(ok),
+            Err(report) => Err(report.into_ctx()),
+        }
     }
 
     #[inline]
@@ -355,7 +369,6 @@ where
     fn and_attached_err<A>(self, attachment: A) -> Result<T, E>
     where
         A: fmt::Debug + Send + Sync + 'static;
-    fn on_err(self, op: impl FnOnce()) -> Result<T, E>;
 }
 
 impl<T, E> LogError<T, E> for Result<T, E>
@@ -412,15 +425,6 @@ where
     {
         if let Err(e) = &self {
             error!(err = ?e, "{attachment:?}");
-        }
-        self
-    }
-
-    #[inline]
-    #[track_caller]
-    fn on_err(self, op: impl FnOnce()) -> Self {
-        if self.is_err() {
-            op();
         }
         self
     }
@@ -919,6 +923,9 @@ mod test {
             "NaN"
                 .parse::<usize>()
                 .map_err(ConversionError::from::<&str, usize>)
+                .change_context(MyError)
+                // since we're going from MyError to MyError, we should just attach a
+                // new Location to the stack
                 .into_ctx()
         }
 
