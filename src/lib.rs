@@ -1,9 +1,5 @@
 use error_stack::fmt::ColorMode;
-use std::{
-    any::{self, Any, TypeId},
-    fmt,
-    panic::Location,
-};
+use std::{any::TypeId, fmt, panic::Location};
 use tracing::{debug, error, info, trace, warn, Level};
 
 pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
@@ -11,8 +7,6 @@ pub use thiserror;
 
 pub mod attachment;
 pub mod context;
-#[cfg(feature = "grpc")]
-pub mod grpc;
 
 pub use attachment::{Expectation, Field, Index, KeyValue, Type};
 
