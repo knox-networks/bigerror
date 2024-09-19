@@ -81,6 +81,7 @@ pub struct Type(&'static str);
 
 impl Type {
     // const fn when type_name is const fn in stable
+    #[must_use]
     pub fn of<T>() -> Self {
         Self(simple_type_name::<T>())
     }
@@ -209,6 +210,7 @@ impl std::ops::Deref for DisplayDuration {
 }
 
 /// convert a [`Duration`] into a "0H00m00s" string
+#[must_use]
 pub fn hms_string(duration: Duration) -> String {
     if duration.is_zero() {
         return "ZERO".to_string();
@@ -237,10 +239,7 @@ pub fn hms_string(duration: Duration) -> String {
 
 pub(crate) fn simple_type_name<T: ?Sized>() -> &'static str {
     let full_type = std::any::type_name::<T>();
-    full_type
-        .rsplit_once("::")
-        .map(|t| t.1)
-        .unwrap_or(full_type)
+    full_type.rsplit_once("::").map_or(full_type, |t| t.1)
 }
 
 // this is meant to explicitly indicate

@@ -893,7 +893,7 @@ mod test {
     fn option_report() {
         assert_err!(None::<()>.expect_or());
 
-        let id: u32 = 0xdeadbeef;
+        let id: u32 = 0xdead_beef;
         assert_err!(None::<bool>.expect_kv("id", id));
         assert!(Some(true).expect_kv("id", id).unwrap());
 

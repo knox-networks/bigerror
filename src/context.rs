@@ -27,9 +27,9 @@ pub struct BoxCoreError(Box<dyn CoreError>);
 ///   * used by codecs/serializers/deserializers
 ///
 ///  here's an example of types/traits that can emit encode/decode errors:
-///  * https://docs.rs/tonic/latest/tonic/codec/trait.Encoder.html
-///  * https://docs.rs/rkyv/latest/rkyv/ser/serializers/type.AllocSerializer.html
-///  * https://docs.rs/serde/latest/serde/trait.Serializer.html
+///  * <https://docs.rs/tonic/latest/tonic/codec/trait.Encoder.html>
+///  * <https://docs.rs/rkyv/latest/rkyv/ser/serializers/type.AllocSerializer.html>
+///  * <https://docs.rs/serde/latest/serde/trait.Serializer.html>
 pub struct DecodeError;
 reportable!(DecodeError);
 
