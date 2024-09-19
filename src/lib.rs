@@ -682,6 +682,16 @@ where
     fn expect_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
         self.expect_kv(Index(key), ty!(T))
     }
+
+    #[inline]
+    #[track_caller]
+    fn expect_by_fn<F, K>(self, key_fn: F) -> Result<T, Report<NotFound>>
+    where
+        K: Display,
+        F: FnOnce() -> K,
+    {
+        self.expect_kv(Index(key_fn()), ty!(T))
+    }
 }
 
 impl<T> OptionReport<T> for Option<T> {

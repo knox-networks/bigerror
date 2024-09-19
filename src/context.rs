@@ -1,9 +1,9 @@
-use std::{any, path::Path, time::Duration};
+use std::{path::Path, time::Duration};
 
 use error_stack::Context;
 
 use crate::{
-    attachment::{self, FromTo, Unsupported},
+    attachment::{self, simple_type_name, FromTo, Unsupported},
     ty, AttachExt, Report, Reportable,
 };
 
@@ -163,7 +163,7 @@ impl InvalidInput {
 
     #[track_caller]
     pub fn type_name<T: ?Sized>() -> Report<Self> {
-        let type_name = any::type_name::<T>();
+        let type_name = simple_type_name::<T>();
         Report::new(Self).attach_printable(format!("type: {type_name}"))
     }
 
