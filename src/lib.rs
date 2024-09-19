@@ -37,9 +37,15 @@ where
     fn report<C: Context>(ctx: C) -> Report<Self> {
         Report::new(ctx).change_context(Self::value())
     }
-    // TODO
-    // fn report_dyn_err(err: impl std::error::Error + 'static + Send + Sync)
-    // -> Report<Self>;
+
+    #[track_caller]
+    fn attach_fn<A>(attach_fn: impl FnOnce() -> A) -> Report<Self>
+    where
+        A: Display,
+    {
+        Report::new(Self::value()).attach_printable(attach_fn())
+    }
+
     #[track_caller]
     fn attach<A>(value: A) -> Report<Self>
     where
@@ -980,8 +986,6 @@ mod test {
 
     #[test]
     fn attach_variant() {
-        let my_number = 2;
-        let other_number = 3;
         fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
             if other != mine {
                 bail!(InvalidInput::attach("expected my number!")
@@ -990,6 +994,10 @@ mod test {
             }
             Ok(())
         }
+
+        let my_number = 2;
+        let other_number = 3;
+
         assert_err!(compare(my_number, other_number));
     }
 
