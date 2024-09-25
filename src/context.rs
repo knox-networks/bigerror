@@ -1,9 +1,9 @@
-use std::{any, path::Path, time::Duration};
+use std::{path::Path, time::Duration};
 
 use error_stack::Context;
 
 use crate::{
-    attachment::{self, FromTo, Unsupported},
+    attachment::{self, simple_type_name, FromTo, Unsupported},
     ty, AttachExt, Report, Reportable,
 };
 
@@ -27,9 +27,9 @@ pub struct BoxCoreError(Box<dyn CoreError>);
 ///   * used by codecs/serializers/deserializers
 ///
 ///  here's an example of types/traits that can emit encode/decode errors:
-///  * https://docs.rs/tonic/latest/tonic/codec/trait.Encoder.html
-///  * https://docs.rs/rkyv/latest/rkyv/ser/serializers/type.AllocSerializer.html
-///  * https://docs.rs/serde/latest/serde/trait.Serializer.html
+///  * <https://docs.rs/tonic/latest/tonic/codec/trait.Encoder.html>
+///  * <https://docs.rs/rkyv/latest/rkyv/ser/serializers/type.AllocSerializer.html>
+///  * <https://docs.rs/serde/latest/serde/trait.Serializer.html>
 pub struct DecodeError;
 reportable!(DecodeError);
 
@@ -163,7 +163,7 @@ impl InvalidInput {
 
     #[track_caller]
     pub fn type_name<T: ?Sized>() -> Report<Self> {
-        let type_name = any::type_name::<T>();
+        let type_name = simple_type_name::<T>();
         Report::new(Self).attach_printable(format!("type: {type_name}"))
     }
 

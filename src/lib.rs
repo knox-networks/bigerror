@@ -37,9 +37,15 @@ where
     fn report<C: Context>(ctx: C) -> Report<Self> {
         Report::new(ctx).change_context(Self::value())
     }
-    // TODO
-    // fn report_dyn_err(err: impl std::error::Error + 'static + Send + Sync)
-    // -> Report<Self>;
+
+    #[track_caller]
+    fn attach_fn<A>(attach_fn: impl FnOnce() -> A) -> Report<Self>
+    where
+        A: Display,
+    {
+        Report::new(Self::value()).attach_printable(attach_fn())
+    }
+
     #[track_caller]
     fn attach<A>(value: A) -> Report<Self>
     where
@@ -682,6 +688,16 @@ where
     fn expect_by<K: Display>(self, key: K) -> Result<T, Report<NotFound>> {
         self.expect_kv(Index(key), ty!(T))
     }
+
+    #[inline]
+    #[track_caller]
+    fn expect_by_fn<F, K>(self, key_fn: F) -> Result<T, Report<NotFound>>
+    where
+        K: Display,
+        F: FnOnce() -> K,
+    {
+        self.expect_kv(Index(key_fn()), ty!(T))
+    }
 }
 
 impl<T> OptionReport<T> for Option<T> {
@@ -883,7 +899,7 @@ mod test {
     fn option_report() {
         assert_err!(None::<()>.expect_or());
 
-        let id: u32 = 0xdeadbeef;
+        let id: u32 = 0xdead_beef;
         assert_err!(None::<bool>.expect_kv("id", id));
         assert!(Some(true).expect_kv("id", id).unwrap());
 
@@ -970,8 +986,6 @@ mod test {
 
     #[test]
     fn attach_variant() {
-        let my_number = 2;
-        let other_number = 3;
         fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
             if other != mine {
                 bail!(InvalidInput::attach("expected my number!")
@@ -980,6 +994,10 @@ mod test {
             }
             Ok(())
         }
+
+        let my_number = 2;
+        let other_number = 3;
+
         assert_err!(compare(my_number, other_number));
     }
 

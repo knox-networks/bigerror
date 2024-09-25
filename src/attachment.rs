@@ -1,4 +1,4 @@
-use std::{any, fmt, time::Duration};
+use std::{fmt, time::Duration};
 
 use tracing::error;
 
@@ -81,12 +81,13 @@ pub struct Type(&'static str);
 
 impl Type {
     // const fn when type_name is const fn in stable
+    #[must_use]
     pub fn of<T>() -> Self {
-        Self(any::type_name::<T>())
+        Self(simple_type_name::<T>())
     }
 
     pub fn of_val<T: ?Sized>(_val: &T) -> Self {
-        Self(any::type_name::<T>())
+        Self(simple_type_name::<T>())
     }
 }
 
@@ -209,6 +210,7 @@ impl std::ops::Deref for DisplayDuration {
 }
 
 /// convert a [`Duration`] into a "0H00m00s" string
+#[must_use]
 pub fn hms_string(duration: Duration) -> String {
     if duration.is_zero() {
         return "ZERO".to_string();
@@ -235,12 +237,17 @@ pub fn hms_string(duration: Duration) -> String {
     hms
 }
 
+pub(crate) fn simple_type_name<T: ?Sized>() -> &'static str {
+    let full_type = std::any::type_name::<T>();
+    full_type.rsplit_once("::").map_or(full_type, |t| t.1)
+}
+
 // this is meant to explicitly indicate
 // that the underlying `A` is being
 // used as an index key for getter methods in a collection
 // such as `HashMap` keys and `Vec` indices
 #[derive(Debug, thiserror::Error)]
-#[error("idx [{0}: {}]", std::any::type_name::<I>())]
+#[error("idx [{0}: {}]", simple_type_name::<I>())]
 pub struct Index<I: fmt::Display>(pub I);
 
 #[cfg(test)]
