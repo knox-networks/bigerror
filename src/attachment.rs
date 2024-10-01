@@ -19,6 +19,12 @@ impl<A> Debug for A where A: fmt::Debug + Send + Sync + 'static {}
 #[derive(Debug)]
 pub struct Dbg<A: Debug>(pub A);
 
+impl Dbg<String> {
+    pub fn format(attachment: impl fmt::Debug) -> Self {
+        Self(format!("{attachment:?}"))
+    }
+}
+
 impl<A: Debug> fmt::Display for Dbg<A> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.0)
@@ -237,8 +243,12 @@ pub fn hms_string(duration: Duration) -> String {
     hms
 }
 
-pub(crate) fn simple_type_name<T: ?Sized>() -> &'static str {
+pub fn simple_type_name<T: ?Sized>() -> &'static str {
     let full_type = std::any::type_name::<T>();
+    // Option<T>, [T], Vec<T>
+    if full_type.contains(['<', '[']) {
+        return full_type;
+    }
     full_type.rsplit_once("::").map_or(full_type, |t| t.1)
 }
 

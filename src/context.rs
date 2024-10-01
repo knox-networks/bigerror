@@ -3,8 +3,8 @@ use std::{path::Path, time::Duration};
 use error_stack::Context;
 
 use crate::{
-    attachment::{self, simple_type_name, FromTo, Unsupported},
-    ty, AttachExt, Report, Reportable,
+    attachment::{self, simple_type_name, Display, FromTo, Unsupported},
+    ty, AttachExt, Index, Report, Reportable,
 };
 
 use crate::{attachment::DisplayDuration, reportable, Field};
@@ -188,6 +188,10 @@ impl NotFound {
     #[track_caller]
     pub fn with_field(field: &'static str) -> Report<Self> {
         Report::new(Self).attach_printable(Field::new(field, attachment::Missing))
+    }
+
+    pub fn with_index<T, K: Display>(key: K) -> Report<Self> {
+        Self::with_kv(Index(key), ty!(T))
     }
 }
 
