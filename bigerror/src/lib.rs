@@ -113,7 +113,7 @@ pub trait ReportAs<T> {
     fn report_as<C: ThinContext>(self) -> Result<T, Report<C>>;
 }
 
-impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
+impl<T, E: Context + core::error::Error> ReportAs<T> for Result<T, E> {
     #[inline]
     #[track_caller]
     fn report_as<C: ThinContext>(self) -> Result<T, Report<C>> {
@@ -620,7 +620,7 @@ mod test {
     }
     #[test]
     fn box_reportable() {
-        fn output() -> Result<usize, Box<dyn std::error::Error + Sync + Send>> {
+        fn output() -> Result<usize, Box<dyn core::error::Error + Sync + Send>> {
             Ok("NaN".parse::<usize>().map_err(Box::new)?)
         }
 

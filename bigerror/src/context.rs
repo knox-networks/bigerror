@@ -10,7 +10,7 @@ use crate::{
 
 use crate::{attachment::DisplayDuration, Field};
 
-/// Used to enacpsulate opaque `dyn std::error::Error` types
+/// Used to enacpsulate opaque `dyn core::error::Error` types
 #[derive(Debug, dm::Display)]
 #[display("{_0}")]
 pub struct BoxError(Box<dyn core::error::Error + 'static + Send + Sync>);
@@ -114,13 +114,13 @@ impl BoxError {
     #[track_caller]
     pub fn new<E>(err: E) -> Report<Self>
     where
-        E: std::error::Error + 'static + Send + Sync,
+        E: core::error::Error + 'static + Send + Sync,
     {
         Report::new(Self(Box::new(err)))
     }
 
     #[track_caller]
-    pub fn from(err: Box<dyn std::error::Error + 'static + Send + Sync>) -> Report<Self> {
+    pub fn from(err: Box<dyn core::error::Error + 'static + Send + Sync>) -> Report<Self> {
         Report::new(Self(err))
     }
 }
