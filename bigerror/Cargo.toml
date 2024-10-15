@@ -1,0 +1,24 @@
+[package]
+name = "bigerror"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+
+[features]
+default = ["std"]
+std = ["error-stack/std", "error-stack/anyhow"]
+spantrace = ["error-stack/spantrace"]
+eyre = ["error-stack/eyre"]
+serde = ["error-stack/serde"]
+hooks = ["error-stack/hooks"]
+
+
+[dependencies]
+error-stack.workspace = true
+tracing.workspace = true
+bigerror-derive.workspace = true
+derive_more.workspace = true
+

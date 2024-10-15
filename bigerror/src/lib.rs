@@ -2,8 +2,8 @@ use error_stack::fmt::ColorMode;
 use std::{any::TypeId, fmt, panic::Location};
 use tracing::{debug, error, info, trace, warn, Level};
 
+pub use bigerror_derive::ThinContext;
 pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
-pub use thiserror;
 
 pub mod attachment;
 pub mod context;
@@ -27,15 +27,16 @@ pub fn init_no_ansi() {
     Report::set_color_mode(ColorMode::None);
 }
 
-/// `Reportable` behaves as an `error_stack::ContextExt`
+/// `ThinContext` behaves as an `error_stack::ContextExt`
 /// ideally used for zero sized errors or ones that hold a `'static` ref/value
-pub trait Reportable
+pub trait ThinContext
 where
     Self: Sized + Context,
 {
-    fn value() -> Self;
+    const VALUE: Self;
+
     fn report<C: Context>(ctx: C) -> Report<Self> {
-        Report::new(ctx).change_context(Self::value())
+        Report::new(ctx).change_context(Self::VALUE)
     }
 
     #[track_caller]
@@ -43,7 +44,7 @@ where
     where
         A: Display,
     {
-        Report::new(Self::value()).attach_printable(attach_fn())
+        Report::new(Self::VALUE).attach_printable(attach_fn())
     }
 
     #[track_caller]
@@ -51,7 +52,7 @@ where
     where
         A: Display,
     {
-        Report::new(Self::value()).attach_printable(value)
+        Report::new(Self::VALUE).attach_printable(value)
     }
     #[track_caller]
     fn attach_dbg<A>(value: A) -> Report<Self>
@@ -61,7 +62,7 @@ where
         Self::attach(Dbg(value))
     }
     #[track_caller]
-    fn with_kv<K, V>(key: K, value: V) -> Report<Self>
+    fn attach_kv<K, V>(key: K, value: V) -> Report<Self>
     where
         K: Display,
         V: Display,
@@ -69,7 +70,7 @@ where
         Self::attach(KeyValue(key, value))
     }
     #[track_caller]
-    fn with_kv_dbg<K, V>(key: K, value: V) -> Report<Self>
+    fn attach_kv_dbg<K, V>(key: K, value: V) -> Report<Self>
     where
         K: Display,
         V: Debug,
@@ -77,7 +78,7 @@ where
         Self::attach(KeyValue::dbg(key, value))
     }
     #[track_caller]
-    fn with_field_status<S: Display>(key: &'static str, status: S) -> Report<Self> {
+    fn attach_field<S: Display>(key: &'static str, status: S) -> Report<Self> {
         Self::attach(Field::new(key, status))
     }
 
@@ -87,38 +88,38 @@ where
     }
 
     #[track_caller]
-    fn with_variant<A: Display>(value: A) -> Report<Self> {
-        Self::with_kv(attachment::Type::of::<A>(), value)
+    fn attach_ty_val<A: Display>(value: A) -> Report<Self> {
+        Self::attach_kv(ty!(A), value)
     }
 
     #[track_caller]
-    fn with_variant_dbg<A: Debug>(value: A) -> Report<Self> {
-        Self::with_kv_dbg(attachment::Type::of::<A>(), value)
+    fn attach_ty_dbg<A: Debug>(value: A) -> Report<Self> {
+        Self::attach_kv_dbg(ty!(A), value)
     }
 
     #[track_caller]
-    fn with_type<A>() -> Report<Self> {
-        Self::attach(attachment::Type::of::<A>())
+    fn attach_ty<A>() -> Report<Self> {
+        Self::attach(ty!(A))
     }
 
     #[track_caller]
-    fn with_type_status<A: Send + Sync + 'static>(status: impl Display) -> Report<Self> {
-        Self::attach(Field::new(attachment::Type::of::<A>(), status))
+    fn attach_ty_status<A: Send + Sync + 'static>(status: impl Display) -> Report<Self> {
+        Self::attach(Field::new(ty!(A), status))
     }
 }
 
 /// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
 pub trait ReportAs<T> {
-    fn report_as<C: Reportable>(self) -> Result<T, Report<C>>;
+    fn report_as<C: ThinContext>(self) -> Result<T, Report<C>>;
 }
 
-impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
+impl<T, E: Context + core::error::Error> ReportAs<T> for Result<T, E> {
     #[inline]
     #[track_caller]
-    fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
+    fn report_as<C: ThinContext>(self) -> Result<T, Report<C>> {
         // TODO #[track_caller] on closure
         // https://github.com/rust-lang/rust/issues/87417
-        // self.map_err(|e| Report::new(C::value()).attach_printable(e))
+        // self.map_err(|e| Report::new(C::VALUE).attach_printable(e))
         match self {
             Ok(v) => Ok(v),
             Err(e) => {
@@ -143,34 +144,34 @@ impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
 }
 
 pub trait IntoContext {
-    fn into_ctx<C2: Reportable>(self) -> Report<C2>;
+    fn into_ctx<C2: ThinContext>(self) -> Report<C2>;
 }
 
 impl<C: Context> IntoContext for Report<C> {
     #[inline]
     #[track_caller]
-    fn into_ctx<C2: Reportable>(self) -> Report<C2> {
+    fn into_ctx<C2: ThinContext>(self) -> Report<C2> {
         if TypeId::of::<C>() == TypeId::of::<C2>() {
             // if C and C2 are zero-sized and have the same TypeId then they are covariant
             unsafe {
                 return std::mem::transmute::<Self, Report<C2>>(self.attach(*Location::caller()));
             }
         }
-        self.change_context(C2::value())
+        self.change_context(C2::VALUE)
     }
 }
 
 pub trait ResultIntoContext: ResultExt {
-    fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
+    fn into_ctx<C2: ThinContext>(self) -> Result<Self::Ok, Report<C2>>;
     // Result::and_then
     fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(Self::Ok) -> Result<U, Report<C2>>;
     // Result::map
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(Self::Ok) -> U;
 }
 
@@ -180,7 +181,7 @@ where
 {
     #[inline]
     #[track_caller]
-    fn into_ctx<C2: Reportable>(self) -> Result<T, Report<C2>> {
+    fn into_ctx<C2: ThinContext>(self) -> Result<T, Report<C2>> {
         // Can't use `map_err` as `#[track_caller]` is unstable on closures
         match self {
             Ok(ok) => Ok(ok),
@@ -192,12 +193,12 @@ where
     #[track_caller]
     fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(T) -> Result<U, Report<C2>>,
     {
         match self {
             Ok(t) => op(t),
-            Err(ctx) => Err(ctx.change_context(C2::value())),
+            Err(ctx) => Err(ctx.change_context(C2::VALUE)),
         }
     }
 
@@ -205,56 +206,45 @@ where
     #[track_caller]
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(T) -> U,
     {
         match self {
             Ok(t) => Ok(op(t)),
-            Err(ctx) => Err(ctx.change_context(C2::value())),
+            Err(ctx) => Err(ctx.change_context(C2::VALUE)),
         }
     }
 }
 
-// TODO convert to #[derive(Reportable)]
-#[macro_export]
-macro_rules! reportable {
-    ($context:ident) => {
-        impl $crate::Reportable for $context {
-            #[track_caller]
-            fn report<C: $crate::Context>(ctx: C) -> $crate::Report<Self> {
-                $crate::Report::new(ctx).change_context(Self)
-            }
-
-            #[track_caller]
-            fn value() -> Self {
-                $context
-            }
-        }
-    };
-}
-
 pub trait AttachExt {
+    #[must_use]
     fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
         K: Display,
         V: Display;
+    #[must_use]
     fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Self
     where
         K: Display,
         V: Debug;
 
+    #[must_use]
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
         S: Display;
+
+    #[must_use]
     fn attach_dbg<A>(self, value: A) -> Self
     where
         A: Debug;
-    fn attach_variant<A>(self, value: A) -> Self
+
+    #[must_use]
+    fn attach_ty_val<A>(self, value: A) -> Self
     where
         Self: Sized,
         A: Display,
     {
-        self.attach_kv(attachment::Type::of::<A>(), value)
+        self.attach_kv(ty!(A), value)
     }
 }
 
@@ -447,220 +437,6 @@ impl<T, E> ClearResult<T, E> for Result<T, E> {
     }
 }
 
-pub trait ToReport<T> {
-    #[track_caller]
-    fn to_report(self) -> Report<T>;
-
-    #[track_caller]
-    fn change_context<C: Context>(self, context: C) -> Report<C>
-    where
-        Self: Sized,
-    {
-        self.to_report().change_context(context)
-    }
-}
-
-pub trait FromReport<C> {
-    fn to_report(self) -> Report<C>;
-}
-
-/// USAGE:
-/// * `impl From<SomeError as ToReport<_> $(as $context:path)*> for OurError::Report(OurReportError)`
-///  - Implements `From<E> where E: ToReport<_>` for  errors that implement [`ToReport`]
-/// * `impl From<Report<SomeError>>> for OurError::Report(TransactionError)`
-///  - Implements `From<Report<SomeError>>` for `Report<OurReportError>`
-/// * `impl From<SomeError $(as $context:path)*> for OurError::Report(TransactionError)`
-///  - Implements `From<SomeError>` for `Report<OurReportError>`
-///  - Used to cast an error to `OurReportError`, can use `as` to do multiple `::from` conversion:
-///    `impl From<SomeError as MiddleError>` does a concrete implementation of the `impl` below where `E` is `SomeError`:
-///    `impl From<E> for OurError where E: Into<MiddleError> {}`
-#[macro_export]
-macro_rules! from_report {
-    // ------
-    // From<ToReport<_> as ctx>
-    ({ impl From<$from:path as ToReport<_> $(as $context:path)*> $($tail:tt)* }) => {
-        from_report!(@t[] @report_t[] @to_report[$from $(as $context)*,] $($tail)*);
-    };
-    // From<ToReport<_>>
-    ({ impl From<$from:path as ToReport<_>> $($tail:tt)* }) => {
-        from_report!(@t[] @report_t[] @to_report[$from,] $($tail)*);
-    };
-    // From<Report<T>>
-    ({ impl From<Report<$from:path>> $($tail:tt)* }) => {
-        from_report!(@t[] @report_t[$from] @to_report[] $($tail)*);
-    };
-    // From<T>
-    ({ impl From<$from:path $(as $context:path)*> $($tail:tt)*  }) => {
-        from_report!(@t[$from $(as $context)*,] @report_t[] @to_report[] $($tail)*);
-    };
-    // ------
-    // From<Report<T>>
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    impl From<Report<$from:path>> $($tail:tt)*) => {
-        from_report!(
-            @t[$($t $(as $t_context)*,)*]
-            @report_t[$($report_t)* $from]
-            @to_report[$($to_report $(as $to_context)*,)*]
-            $($tail)*
-        );
-    };
-    // From<ToReport<_> as ctx>
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    impl From<$from:path as ToReport<_> $(as $context:path)*> $($tail:tt)*) => {
-        from_report!(
-            @t[$($t $(as $t_context)*,)*]
-            @report_t[$($report_t)*]
-            @to_report[$($to_report $(as $to_context)*,)* $from $(as $context)*,]
-            $($tail)*
-        );
-    };
-    // From<ToReport<_>>
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    impl From<$from:path as ToReport<_>> $($tail:tt)*) => {
-        from_report!(
-            @t[$($t $(as $t_context)*,)*]
-            @report_t[$($report_t)*]
-            @to_report[$($to_report $(as $to_context)*,)* $from,]
-            $($tail)*
-        );
-    };
-    // From<T>
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    impl From<$from:path $(as $context:path)*> $($tail:tt)*) => {
-        from_report!(
-            @t[$($t $(as $t_context)*,)* $from $(as $context)*,]
-            @report_t[$($report_t)*]
-            @to_report[$($to_report $(as $to_context)*,)*]
-            $($tail)*
-        );
-    };
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    for $for:ident::$variant:ident($inner:path)) => {
-        // T
-        $(impl From<$t> for $for {
-            #[track_caller]
-            fn from(e: $t) -> Self {
-                let report = $crate::Report::new(e)
-                $(.change_context($t_context))*
-                  .change_context($inner);
-                Self::$variant(report)
-            }
-        })*
-
-        // Report<T>
-        $(impl From<$crate::Report<$report_t>> for $for {
-            #[track_caller]
-            fn from(r: $crate::Report<$report_t>) -> Self {
-                Self::$variant(r.change_context($inner))
-            }
-        })*
-        // ToReport<_>
-        $(impl From<$to_report> for $for {
-            #[track_caller]
-            fn from(e: $to_report) -> Self {
-                use $crate::ToReport;
-                let report =  e.to_report()
-                $(.change_context($to_context))*
-                  .change_context($inner);
-                Self::$variant(report)
-            }
-        })*
-        // original
-        impl From<$crate::Report<$inner>> for $for {
-            #[track_caller]
-            fn from(r: $crate::Report<$inner>) -> Self {
-                Self::$variant(r)
-            }
-        }
-    };
-    (impl From<Report<$from:path>> for $for:ident::$variant:ident) => {
-        impl From<$crate::Report<$from>> for $for {
-            #[track_caller]
-            fn from(r: $crate::Report<$from>) -> Self {
-                Self::$variant(r)
-            }
-        }
-    };
-    (impl From<$from:path as ToReport<$context:path>> for $for:ident::$variant:ident) => {
-        impl From<$from> for $for {
-            #[track_caller]
-            fn from(e: $from) -> Self {
-                Self::$variant(<$from as $crate::error::ToReport<_>>::change_context(
-                    e, $context,
-                ))
-            }
-        }
-    };
-    (impl From<$from:path $(as $context:path)*> for $for:ident::$variant:ident) => {
-        impl From<$from> for $for {
-            #[track_caller]
-            fn from(e: $from) -> Self {
-                let report = $crate::Report::new(e)
-                    $(.change_context($context))* ;
-                Self::$variant(report)
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! to_report {
-    (impl ToReport<$reportable:path> for $for:ident::$variant:ident) => {
-        impl $crate::ToReport<$reportable> for $for {
-            #[track_caller]
-            fn to_report(self) -> $crate::Report<$reportable> {
-                #[allow(unreachable_patterns)]
-                match self {
-                    Self::$variant(inner) => inner,
-                    _ => $crate::Report::new(self).change_context($reportable),
-                }
-            }
-        }
-    };
-}
-
-pub trait ResultToReport<T> {
-    /// Type of the [`Ok`] value in the [`Result`]
-    type Ok;
-
-    #[track_caller]
-    fn to_report(self) -> Result<Self::Ok, Report<T>>;
-}
-
-impl<T, E, C> ResultToReport<C> for Result<T, E>
-where
-    E: ToReport<C>,
-{
-    type Ok = T;
-
-    #[inline]
-    #[track_caller]
-    fn to_report(self) -> Result<T, Report<C>> {
-        self.map_err(ToReport::to_report)
-    }
-}
-
-impl<C> ToReport<C> for Report<C> {
-    fn to_report(self) -> Self {
-        self
-    }
-}
-
 /// Used to produce [`NotFound`] reports from an [`Option`]
 pub trait OptionReport<T>
 where
@@ -709,7 +485,7 @@ impl<T> OptionReport<T> for Option<T> {
         // self.ok_or_else(|| Report::new(NotFound))
         match self {
             Some(v) => Ok(v),
-            None => Err(NotFound::with_type::<T>()),
+            None => Err(NotFound::attach_ty::<T>()),
         }
     }
 
@@ -722,7 +498,7 @@ impl<T> OptionReport<T> for Option<T> {
     {
         match self {
             Some(v) => Ok(v),
-            None => Err(NotFound::with_kv(key, value)),
+            None => Err(NotFound::attach_kv(key, value)),
         }
     }
 
@@ -790,16 +566,9 @@ mod test {
 
     use super::*;
 
-    #[derive(Debug, thiserror::Error)]
-    #[error("MyError")]
+    #[derive(ThinContext)]
+    #[bigerror(crate)]
     pub struct MyError;
-    reportable!(MyError);
-
-    #[derive(Debug, thiserror::Error)]
-    pub enum Error {
-        #[error("{0:?}")]
-        Report(Report<MyError>),
-    }
 
     #[derive(Default)]
     struct MyStruct {
@@ -809,7 +578,7 @@ mod test {
 
     impl MyStruct {
         fn __field<T>(_t: T, _field: &'static str) {}
-        fn my_field(&self) -> Option<()> {
+        const fn my_field(&self) -> Option<()> {
             self.my_field
         }
     }
@@ -833,15 +602,6 @@ mod test {
         };
     }
 
-    from_report!({
-
-        impl From<std::string::ParseError as ParseError>
-
-        for Error::Report(MyError)
-    });
-
-    to_report!(impl ToReport<MyError> for Error::Report);
-
     #[test]
     fn report_as() {
         fn output() -> Result<usize, Report<MyError>> {
@@ -860,7 +620,7 @@ mod test {
     }
     #[test]
     fn box_reportable() {
-        fn output() -> Result<usize, Box<dyn std::error::Error + Sync + Send>> {
+        fn output() -> Result<usize, Box<dyn core::error::Error + Sync + Send>> {
             Ok("NaN".parse::<usize>().map_err(Box::new)?)
         }
 
@@ -943,10 +703,10 @@ mod test {
     }
 
     #[test]
-    fn with_type_status() {
+    fn attach_ty_status() {
         fn try_even(num: usize) -> Result<(), Report<MyError>> {
             if num % 2 != 0 {
-                return Err(InvalidInput::with_type_status::<usize>(Invalid).into_ctx());
+                return Err(InvalidInput::attach_ty_status::<usize>(Invalid).into_ctx());
             }
             Ok(())
         }
@@ -985,11 +745,11 @@ mod test {
     }
 
     #[test]
-    fn attach_variant() {
+    fn attach_ty_val() {
         fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
             if other != mine {
                 bail!(InvalidInput::attach("expected my number!")
-                    .attach_variant(other)
+                    .attach_ty_val(other)
                     .into_ctx());
             }
             Ok(())
@@ -1001,7 +761,7 @@ mod test {
         assert_err!(compare(my_number, other_number));
     }
 
-    // should behave the same as `test::attach_variant`
+    // should behave the same as `test::attach_ty_val`
     // but displays lazy allocation of attachment
     #[test]
     fn attach_kv_macro() {
