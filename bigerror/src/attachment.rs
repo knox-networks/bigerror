@@ -2,10 +2,8 @@ use std::{fmt, time::Duration};
 
 use tracing::error;
 
+use derive_more as dm;
 pub use error_stack::{self, Context, Report, ResultExt};
-pub use thiserror;
-
-use crate::reportable;
 
 pub trait Display: fmt::Display + fmt::Debug + Send + Sync + 'static {}
 
@@ -116,30 +114,29 @@ macro_rules! ty {
     };
 }
 
-#[derive(Debug, thiserror::Error)]
-#[error("already present")]
+#[derive(Debug, dm::Display)]
+#[display("already present")]
 pub struct AlreadyPresent;
-reportable!(AlreadyPresent);
 
-#[derive(Debug, thiserror::Error)]
-#[error("missing")]
+#[derive(Debug, dm::Display)]
+#[display("missing")]
 pub struct Missing;
 
-#[derive(Debug, thiserror::Error)]
-#[error("unsupported")]
+#[derive(Debug, dm::Display)]
+#[display("unsupported")]
 pub struct Unsupported;
 
-#[derive(Debug, thiserror::Error)]
-#[error("invalid")]
+#[derive(Debug, dm::Display)]
+#[display("invalid")]
 pub struct Invalid;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 pub struct Expectation<E, A> {
     pub expected: E,
     pub actual: A,
 }
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 pub struct FromTo<F, T>(pub F, pub T);
 
 #[allow(dead_code)]
@@ -256,8 +253,8 @@ pub fn simple_type_name<T: ?Sized>() -> &'static str {
 // that the underlying `A` is being
 // used as an index key for getter methods in a collection
 // such as `HashMap` keys and `Vec` indices
-#[derive(Debug, thiserror::Error)]
-#[error("idx [{0}: {}]", simple_type_name::<I>())]
+#[derive(Debug, dm::Display)]
+#[display("idx [{0}: {}]", simple_type_name::<I>())]
 pub struct Index<I: fmt::Display>(pub I);
 
 #[cfg(test)]

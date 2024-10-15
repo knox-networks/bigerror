@@ -17,8 +17,8 @@ hooks = ["error-stack/hooks"]
 
 
 [dependencies]
-error-stack = "0.5"
-thiserror.workspace = true
+error-stack.workspace = true
 tracing.workspace = true
-bigerror-derive = { workspace = true }
+bigerror-derive.workspace = true
+derive_more.workspace = true
 

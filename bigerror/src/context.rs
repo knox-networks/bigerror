@@ -1,3 +1,4 @@
+use derive_more as dm;
 use std::{path::Path, time::Duration};
 
 use error_stack::Context;
@@ -10,15 +11,10 @@ use crate::{
 use crate::{attachment::DisplayDuration, Field};
 
 /// Used to enacpsulate opaque `dyn std::error::Error` types
-#[derive(Debug, thiserror::Error)]
-#[error("{0}")]
-pub struct BoxError(Box<dyn std::error::Error + 'static + Send + Sync>);
-
-/// this is a [`BoxError`] that satistifes [`core::error::Error`]
-/// using [`core::fmt::Debug`] and [`core::fmt::Display`]
-#[derive(Debug, thiserror::Error)]
-#[error("{0}")]
-pub struct BoxCoreError(Box<dyn CoreError>);
+#[derive(Debug, dm::Display)]
+#[display("{_0}")]
+pub struct BoxError(Box<dyn core::error::Error + 'static + Send + Sync>);
+impl ::core::error::Error for BoxError {}
 
 /// Represents errors emitted during while processing bytes into an object.
 /// * byte types can can be represented by objects such as `&[u8]`, `bytes::Bytes`, and `Vec<u8>`
@@ -101,9 +97,10 @@ pub struct ConfigError;
 #[bigerror(crate)]
 pub struct BuildError;
 
-#[derive(ThinContext)]
-#[error("{}", Field::new("timeout", DisplayDuration(*.0)))]
+#[derive(Debug, dm::Display)]
+#[display("{}", Field::new("timeout", DisplayDuration(self.0)))]
 pub struct Timeout(pub Duration);
+impl ::core::error::Error for Timeout {}
 
 #[derive(ThinContext)]
 #[bigerror(crate)]
@@ -124,17 +121,6 @@ impl BoxError {
 
     #[track_caller]
     pub fn from(err: Box<dyn std::error::Error + 'static + Send + Sync>) -> Report<Self> {
-        Report::new(Self(err))
-    }
-}
-impl BoxCoreError {
-    #[track_caller]
-    pub fn new<E: CoreError>(err: E) -> Report<Self> {
-        Report::new(Self(Box::new(err)))
-    }
-
-    #[track_caller]
-    pub fn from(err: Box<dyn CoreError>) -> Report<Self> {
         Report::new(Self(err))
     }
 }

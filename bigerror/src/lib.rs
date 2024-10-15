@@ -4,7 +4,6 @@ use tracing::{debug, error, info, trace, warn, Level};
 
 pub use bigerror_derive::ThinContext;
 pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
-pub use thiserror;
 
 pub mod attachment;
 pub mod context;
@@ -34,9 +33,9 @@ pub trait ThinContext
 where
     Self: Sized + Context,
 {
-    fn value() -> Self;
+    const VALUE: Self;
     fn report<C: Context>(ctx: C) -> Report<Self> {
-        Report::new(ctx).change_context(Self::value())
+        Report::new(ctx).change_context(Self::VALUE)
     }
 
     #[track_caller]
@@ -44,7 +43,7 @@ where
     where
         A: Display,
     {
-        Report::new(Self::value()).attach_printable(attach_fn())
+        Report::new(Self::VALUE).attach_printable(attach_fn())
     }
 
     #[track_caller]
@@ -52,7 +51,7 @@ where
     where
         A: Display,
     {
-        Report::new(Self::value()).attach_printable(value)
+        Report::new(Self::VALUE).attach_printable(value)
     }
     #[track_caller]
     fn attach_dbg<A>(value: A) -> Report<Self>
@@ -119,7 +118,7 @@ impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
     fn report_as<C: ThinContext>(self) -> Result<T, Report<C>> {
         // TODO #[track_caller] on closure
         // https://github.com/rust-lang/rust/issues/87417
-        // self.map_err(|e| Report::new(C::value()).attach_printable(e))
+        // self.map_err(|e| Report::new(C::VALUE).attach_printable(e))
         match self {
             Ok(v) => Ok(v),
             Err(e) => {
@@ -157,7 +156,7 @@ impl<C: Context> IntoContext for Report<C> {
                 return std::mem::transmute::<Self, Report<C2>>(self.attach(*Location::caller()));
             }
         }
-        self.change_context(C2::value())
+        self.change_context(C2::VALUE)
     }
 }
 
@@ -198,7 +197,7 @@ where
     {
         match self {
             Ok(t) => op(t),
-            Err(ctx) => Err(ctx.change_context(C2::value())),
+            Err(ctx) => Err(ctx.change_context(C2::VALUE)),
         }
     }
 
@@ -211,7 +210,7 @@ where
     {
         match self {
             Ok(t) => Ok(op(t)),
-            Err(ctx) => Err(ctx.change_context(C2::value())),
+            Err(ctx) => Err(ctx.change_context(C2::VALUE)),
         }
     }
 }
@@ -430,220 +429,6 @@ impl<T, E> ClearResult<T, E> for Result<T, E> {
     }
 }
 
-pub trait ToReport<T> {
-    #[track_caller]
-    fn to_report(self) -> Report<T>;
-
-    #[track_caller]
-    fn change_context<C: Context>(self, context: C) -> Report<C>
-    where
-        Self: Sized,
-    {
-        self.to_report().change_context(context)
-    }
-}
-
-pub trait FromReport<C> {
-    fn to_report(self) -> Report<C>;
-}
-
-/// USAGE:
-/// * `impl From<SomeError as ToReport<_> $(as $context:path)*> for OurError::Report(OurReportError)`
-///  - Implements `From<E> where E: ToReport<_>` for  errors that implement [`ToReport`]
-/// * `impl From<Report<SomeError>>> for OurError::Report(TransactionError)`
-///  - Implements `From<Report<SomeError>>` for `Report<OurReportError>`
-/// * `impl From<SomeError $(as $context:path)*> for OurError::Report(TransactionError)`
-///  - Implements `From<SomeError>` for `Report<OurReportError>`
-///  - Used to cast an error to `OurReportError`, can use `as` to do multiple `::from` conversion:
-///    `impl From<SomeError as MiddleError>` does a concrete implementation of the `impl` below where `E` is `SomeError`:
-///    `impl From<E> for OurError where E: Into<MiddleError> {}`
-#[macro_export]
-macro_rules! from_report {
-    // ------
-    // From<ToReport<_> as ctx>
-    ({ impl From<$from:path as ToReport<_> $(as $context:path)*> $($tail:tt)* }) => {
-        from_report!(@t[] @report_t[] @to_report[$from $(as $context)*,] $($tail)*);
-    };
-    // From<ToReport<_>>
-    ({ impl From<$from:path as ToReport<_>> $($tail:tt)* }) => {
-        from_report!(@t[] @report_t[] @to_report[$from,] $($tail)*);
-    };
-    // From<Report<T>>
-    ({ impl From<Report<$from:path>> $($tail:tt)* }) => {
-        from_report!(@t[] @report_t[$from] @to_report[] $($tail)*);
-    };
-    // From<T>
-    ({ impl From<$from:path $(as $context:path)*> $($tail:tt)*  }) => {
-        from_report!(@t[$from $(as $context)*,] @report_t[] @to_report[] $($tail)*);
-    };
-    // ------
-    // From<Report<T>>
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    impl From<Report<$from:path>> $($tail:tt)*) => {
-        from_report!(
-            @t[$($t $(as $t_context)*,)*]
-            @report_t[$($report_t)* $from]
-            @to_report[$($to_report $(as $to_context)*,)*]
-            $($tail)*
-        );
-    };
-    // From<ToReport<_> as ctx>
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    impl From<$from:path as ToReport<_> $(as $context:path)*> $($tail:tt)*) => {
-        from_report!(
-            @t[$($t $(as $t_context)*,)*]
-            @report_t[$($report_t)*]
-            @to_report[$($to_report $(as $to_context)*,)* $from $(as $context)*,]
-            $($tail)*
-        );
-    };
-    // From<ToReport<_>>
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    impl From<$from:path as ToReport<_>> $($tail:tt)*) => {
-        from_report!(
-            @t[$($t $(as $t_context)*,)*]
-            @report_t[$($report_t)*]
-            @to_report[$($to_report $(as $to_context)*,)* $from,]
-            $($tail)*
-        );
-    };
-    // From<T>
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    impl From<$from:path $(as $context:path)*> $($tail:tt)*) => {
-        from_report!(
-            @t[$($t $(as $t_context)*,)* $from $(as $context)*,]
-            @report_t[$($report_t)*]
-            @to_report[$($to_report $(as $to_context)*,)*]
-            $($tail)*
-        );
-    };
-    (
-    @t[$($t:path $(as $t_context:path)*,)*]
-    @report_t[$($report_t:path)*]
-    @to_report[$($to_report:path $(as $to_context:path)*,)*]
-    for $for:ident::$variant:ident($inner:path)) => {
-        // T
-        $(impl From<$t> for $for {
-            #[track_caller]
-            fn from(e: $t) -> Self {
-                let report = $crate::Report::new(e)
-                $(.change_context($t_context))*
-                  .change_context($inner);
-                Self::$variant(report)
-            }
-        })*
-
-        // Report<T>
-        $(impl From<$crate::Report<$report_t>> for $for {
-            #[track_caller]
-            fn from(r: $crate::Report<$report_t>) -> Self {
-                Self::$variant(r.change_context($inner))
-            }
-        })*
-        // ToReport<_>
-        $(impl From<$to_report> for $for {
-            #[track_caller]
-            fn from(e: $to_report) -> Self {
-                use $crate::ToReport;
-                let report =  e.to_report()
-                $(.change_context($to_context))*
-                  .change_context($inner);
-                Self::$variant(report)
-            }
-        })*
-        // original
-        impl From<$crate::Report<$inner>> for $for {
-            #[track_caller]
-            fn from(r: $crate::Report<$inner>) -> Self {
-                Self::$variant(r)
-            }
-        }
-    };
-    (impl From<Report<$from:path>> for $for:ident::$variant:ident) => {
-        impl From<$crate::Report<$from>> for $for {
-            #[track_caller]
-            fn from(r: $crate::Report<$from>) -> Self {
-                Self::$variant(r)
-            }
-        }
-    };
-    (impl From<$from:path as ToReport<$context:path>> for $for:ident::$variant:ident) => {
-        impl From<$from> for $for {
-            #[track_caller]
-            fn from(e: $from) -> Self {
-                Self::$variant(<$from as $crate::error::ToReport<_>>::change_context(
-                    e, $context,
-                ))
-            }
-        }
-    };
-    (impl From<$from:path $(as $context:path)*> for $for:ident::$variant:ident) => {
-        impl From<$from> for $for {
-            #[track_caller]
-            fn from(e: $from) -> Self {
-                let report = $crate::Report::new(e)
-                    $(.change_context($context))* ;
-                Self::$variant(report)
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! to_report {
-    (impl ToReport<$reportable:path> for $for:ident::$variant:ident) => {
-        impl $crate::ToReport<$reportable> for $for {
-            #[track_caller]
-            fn to_report(self) -> $crate::Report<$reportable> {
-                #[allow(unreachable_patterns)]
-                match self {
-                    Self::$variant(inner) => inner,
-                    _ => $crate::Report::new(self).change_context($reportable),
-                }
-            }
-        }
-    };
-}
-
-pub trait ResultToReport<T> {
-    /// Type of the [`Ok`] value in the [`Result`]
-    type Ok;
-
-    #[track_caller]
-    fn to_report(self) -> Result<Self::Ok, Report<T>>;
-}
-
-impl<T, E, C> ResultToReport<C> for Result<T, E>
-where
-    E: ToReport<C>,
-{
-    type Ok = T;
-
-    #[inline]
-    #[track_caller]
-    fn to_report(self) -> Result<T, Report<C>> {
-        self.map_err(ToReport::to_report)
-    }
-}
-
-impl<C> ToReport<C> for Report<C> {
-    fn to_report(self) -> Self {
-        self
-    }
-}
-
 /// Used to produce [`NotFound`] reports from an [`Option`]
 pub trait OptionReport<T>
 where
@@ -773,16 +558,9 @@ mod test {
 
     use super::*;
 
-    #[derive(Debug, thiserror::Error)]
-    #[error("MyError")]
+    #[derive(ThinContext)]
+    #[bigerror(crate)]
     pub struct MyError;
-    reportable!(MyError);
-
-    #[derive(Debug, thiserror::Error)]
-    pub enum Error {
-        #[error("{0:?}")]
-        Report(Report<MyError>),
-    }
 
     #[derive(Default)]
     struct MyStruct {
@@ -815,15 +593,6 @@ mod test {
             }
         };
     }
-
-    from_report!({
-
-        impl From<std::string::ParseError as ParseError>
-
-        for Error::Report(MyError)
-    });
-
-    to_report!(impl ToReport<MyError> for Error::Report);
 
     #[test]
     fn report_as() {

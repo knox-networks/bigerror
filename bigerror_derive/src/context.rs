@@ -4,7 +4,7 @@ use syn::{Data, DeriveInput, Error, Fields};
 
 use crate::attributes::Attributes;
 
-pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
+pub fn thin(input: &DeriveInput) -> Result<TokenStream, Error> {
     let ctx = &input.ident;
     let attributes = Attributes::parse(input)?;
     match &input.data {
@@ -42,7 +42,7 @@ pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
     });
     Ok(quote! {
 
-        impl std::error::Error for #ctx {}
+        impl ::core::error::Error for #ctx {}
         impl ::core::fmt::Debug for #ctx {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 f.write_str(stringify!(#ctx))

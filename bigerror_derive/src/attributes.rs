@@ -18,7 +18,7 @@ fn try_set_attribute<T: ToTokens>(
 
 #[derive(Default)]
 struct Builder {
-    pub display: Option<LitStr>,
+    pub display: bool,
     pub crate_path: Option<Path>,
 }
 
@@ -50,13 +50,13 @@ impl Attributes {
 
         for attr in &input.attrs {
             if attr.path().is_ident("display") {
-                builder.display = Some(attr.parse_args()?);
+                builder.display = true;
             }
             if attr.path().is_ident("bigerror") {
                 attr.parse_nested_meta(|meta| builder.parse_meta(meta))?;
             }
         }
-        let has_display = builder.display.is_some();
+        let has_display = builder.display;
         let crate_path = builder
             .crate_path
             .take()

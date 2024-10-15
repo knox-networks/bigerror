@@ -8,7 +8,7 @@ mod context;
 #[proc_macro_derive(ThinContext, attributes(display, bigerror))]
 pub fn derive_thin_context(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    match context::derive(&input) {
+    match context::thin(&input) {
         Ok(result) => result.into(),
         Err(e) => e.to_compile_error().into(),
     }
