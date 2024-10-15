@@ -42,7 +42,7 @@ pub fn thin(input: &DeriveInput) -> Result<TokenStream, Error> {
     });
     Ok(quote! {
 
-        impl ::std::error::Error for #ctx {}
+        impl ::core::error::Error for #ctx {}
         impl ::core::fmt::Debug for #ctx {
             fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
                 f.write_str(stringify!(#ctx))
