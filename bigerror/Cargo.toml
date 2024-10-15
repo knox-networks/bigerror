@@ -1,0 +1,81 @@
+[package]
+name = "bigerror"
+version.workspace = true
+edition.workspace = true
+description.workspace = true
+license.workspace = true
+documentation.workspace = true
+repository.workspace = true
+
+[features]
+default = ["std"]
+
+spantrace = ["dep:tracing-error", "std"]
+std = ["anyhow?/std"]
+eyre = ["dep:eyre", "std"]
+serde = ["dep:serde"]
+hooks = ['dep:spin']
+
+grpc=["tonic", "tonic-types"]
+
+[dependencies]
+anyhow = { workspace = true, default-features = false, optional = true }
+eyre = { workspace = true, default-features = false, optional = true }
+serde = { workspace = true, default-features = false, optional = true }
+spin = { workspace = true, default-features = false, optional = true, features = ['rwlock', 'once'] }
+thiserror.workspace = true
+tonic = { workspace = true, optional = true }
+tonic-types = { workspace = true, optional = true }
+tracing-error = { workspace = true, optional = true, default-features = false }
+tracing.workspace = true
+bigerror-derive = { workspace = true }
+
+[dev-dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json.workspace = true
+futures = { workspace = true, default-features = false, features = ["executor"] }
+trybuild.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+insta = { workspace = true, features = ['filters', 'ron'] }
+regex.workspace = true
+expect-test.workspace = true
+ansi-to-html.workspace = true
+once_cell.workspace = true
+supports-color.workspace = true
+supports-unicode.workspace = true
+owo-colors.workspace = true
+thiserror.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+cargo-args = ["-Z", "unstable-options", "-Z", "rustdoc-scrape-examples"]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[[example]]
+name = "demo"
+required-features = ["std"]
+doc-scrape-examples = true
+
+[[example]]
+name = "exit_code"
+required-features = ["std"]
+doc-scrape-examples = true
+
+[[example]]
+name = "parse_config"
+required-features = ["std"]
+doc-scrape-examples = true
+
+[[example]]
+name = "detect"
+required-features = ['std']
+doc-scrape-examples = true
+
+
+[[test]]
+name = "common"
+test = false
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ['cfg(nightly)'] }
