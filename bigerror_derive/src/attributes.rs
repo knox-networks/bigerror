@@ -1,5 +1,5 @@
 use quote::ToTokens;
-use syn::{meta::ParseNestedMeta, parse_quote, DeriveInput, Error, LitStr, Path, Token};
+use syn::{meta::ParseNestedMeta, parse_quote, DeriveInput, Error, Path, Token};
 
 fn try_set_attribute<T: ToTokens>(
     attribute: &mut Option<T>,
@@ -23,7 +23,7 @@ struct Builder {
 }
 
 impl Builder {
-    fn parse_meta(&mut self, meta: ParseNestedMeta<'_>) -> Result<(), Error> {
+    fn parse_meta(&mut self, meta: &ParseNestedMeta<'_>) -> Result<(), Error> {
         if meta.path.is_ident("crate") {
             if meta.input.parse::<Token![=]>().is_ok() {
                 let path = meta.input.parse::<Path>()?;
@@ -45,7 +45,7 @@ pub struct Attributes {
     pub crate_path: Path,
 }
 impl Attributes {
-    pub fn parse(input: &DeriveInput) -> Result<Attributes, Error> {
+    pub fn parse(input: &DeriveInput) -> Result<Self, Error> {
         let mut builder = Builder::default();
 
         for attr in &input.attrs {
@@ -53,7 +53,7 @@ impl Attributes {
                 builder.display = true;
             }
             if attr.path().is_ident("bigerror") {
-                attr.parse_nested_meta(|meta| builder.parse_meta(meta))?;
+                attr.parse_nested_meta(|meta| builder.parse_meta(&meta))?;
             }
         }
         let has_display = builder.display;

@@ -216,21 +216,28 @@ where
 }
 
 pub trait AttachExt {
+    #[must_use]
     fn attach_kv<K, V>(self, key: K, value: V) -> Self
     where
         K: Display,
         V: Display;
+    #[must_use]
     fn attach_kv_dbg<K, V>(self, key: K, value: V) -> Self
     where
         K: Display,
         V: Debug;
 
+    #[must_use]
     fn attach_field_status<S>(self, name: &'static str, status: S) -> Self
     where
         S: Display;
+
+    #[must_use]
     fn attach_dbg<A>(self, value: A) -> Self
     where
         A: Debug;
+
+    #[must_use]
     fn attach_variant<A>(self, value: A) -> Self
     where
         Self: Sized,
@@ -570,7 +577,7 @@ mod test {
 
     impl MyStruct {
         fn __field<T>(_t: T, _field: &'static str) {}
-        fn my_field(&self) -> Option<()> {
+        const fn my_field(&self) -> Option<()> {
             self.my_field
         }
     }

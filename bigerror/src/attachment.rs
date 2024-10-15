@@ -1,7 +1,5 @@
 use std::{fmt, time::Duration};
 
-use tracing::error;
-
 use derive_more as dm;
 pub use error_stack::{self, Context, Report, ResultExt};
 
@@ -30,7 +28,7 @@ impl<A: Debug> fmt::Display for Dbg<A> {
 }
 
 // simple key-value pair attachment
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct KeyValue<K, V>(pub K, pub V);
 
 impl<K: fmt::Display, V: fmt::Display> fmt::Display for KeyValue<K, V> {
@@ -40,7 +38,7 @@ impl<K: fmt::Display, V: fmt::Display> fmt::Display for KeyValue<K, V> {
 }
 
 impl<K: Display, V: Debug> KeyValue<K, Dbg<V>> {
-    pub fn dbg(key: K, value: V) -> Self {
+    pub const fn dbg(key: K, value: V) -> Self {
         Self(key, Dbg(value))
     }
 }
@@ -74,13 +72,13 @@ impl<Id: Display, S: Display> fmt::Display for Field<Id, S> {
 }
 
 impl<Id: Display, S: Display> Field<Id, S> {
-    pub fn new(key: Id, status: S) -> Self {
+    pub const fn new(key: Id, status: S) -> Self {
         Self { id: key, status }
     }
 }
 /// wrapper attachment that is used to refer to the type of an object
 /// rather than the value
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 pub struct Type(&'static str);
 
 impl Type {
@@ -240,6 +238,7 @@ pub fn hms_string(duration: Duration) -> String {
     hms
 }
 
+#[must_use]
 pub fn simple_type_name<T: ?Sized>() -> &'static str {
     let full_type = std::any::type_name::<T>();
     // Option<T>, [T], Vec<T>
