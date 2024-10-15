@@ -31,6 +31,15 @@ pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
     }
 
     let bigerror = attributes.crate_path;
+    let impl_display = (!attributes.has_display).then(|| {
+        quote! {
+            impl ::core::fmt::Display for #ctx {
+                fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+                    f.write_str(stringify!(#ctx))
+                }
+            }
+        }
+    });
     Ok(quote! {
 
         impl std::error::Error for #ctx {}
@@ -39,11 +48,8 @@ pub fn derive(input: &DeriveInput) -> Result<TokenStream, Error> {
                 f.write_str(stringify!(#ctx))
             }
         }
-        impl ::core::fmt::Display for #ctx {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
-                f.write_str(stringify!(#ctx))
-            }
-        }
+
+        #impl_display
         impl #bigerror::ThinContext for #ctx {
             const VALUE: Self = #ctx;
         }

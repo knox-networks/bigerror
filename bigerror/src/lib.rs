@@ -2,6 +2,7 @@ use error_stack::fmt::ColorMode;
 use std::{any::TypeId, fmt, panic::Location};
 use tracing::{debug, error, info, trace, warn, Level};
 
+pub use bigerror_derive::ThinContext;
 pub use error_stack::{self, bail, ensure, report, Context, Report, ResultExt};
 pub use thiserror;
 
@@ -27,9 +28,9 @@ pub fn init_no_ansi() {
     Report::set_color_mode(ColorMode::None);
 }
 
-/// `Reportable` behaves as an `error_stack::ContextExt`
+/// `ThinContext` behaves as an `error_stack::ContextExt`
 /// ideally used for zero sized errors or ones that hold a `'static` ref/value
-pub trait Reportable
+pub trait ThinContext
 where
     Self: Sized + Context,
 {
@@ -109,13 +110,13 @@ where
 
 /// Extends [`error_stack::IntoReport`] to allow an implicit `E -> Report<C>` inference
 pub trait ReportAs<T> {
-    fn report_as<C: Reportable>(self) -> Result<T, Report<C>>;
+    fn report_as<C: ThinContext>(self) -> Result<T, Report<C>>;
 }
 
 impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
     #[inline]
     #[track_caller]
-    fn report_as<C: Reportable>(self) -> Result<T, Report<C>> {
+    fn report_as<C: ThinContext>(self) -> Result<T, Report<C>> {
         // TODO #[track_caller] on closure
         // https://github.com/rust-lang/rust/issues/87417
         // self.map_err(|e| Report::new(C::value()).attach_printable(e))
@@ -143,13 +144,13 @@ impl<T, E: Context + std::error::Error> ReportAs<T> for Result<T, E> {
 }
 
 pub trait IntoContext {
-    fn into_ctx<C2: Reportable>(self) -> Report<C2>;
+    fn into_ctx<C2: ThinContext>(self) -> Report<C2>;
 }
 
 impl<C: Context> IntoContext for Report<C> {
     #[inline]
     #[track_caller]
-    fn into_ctx<C2: Reportable>(self) -> Report<C2> {
+    fn into_ctx<C2: ThinContext>(self) -> Report<C2> {
         if TypeId::of::<C>() == TypeId::of::<C2>() {
             // if C and C2 are zero-sized and have the same TypeId then they are covariant
             unsafe {
@@ -161,16 +162,16 @@ impl<C: Context> IntoContext for Report<C> {
 }
 
 pub trait ResultIntoContext: ResultExt {
-    fn into_ctx<C2: Reportable>(self) -> Result<Self::Ok, Report<C2>>;
+    fn into_ctx<C2: ThinContext>(self) -> Result<Self::Ok, Report<C2>>;
     // Result::and_then
     fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(Self::Ok) -> Result<U, Report<C2>>;
     // Result::map
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(Self::Ok) -> U;
 }
 
@@ -180,7 +181,7 @@ where
 {
     #[inline]
     #[track_caller]
-    fn into_ctx<C2: Reportable>(self) -> Result<T, Report<C2>> {
+    fn into_ctx<C2: ThinContext>(self) -> Result<T, Report<C2>> {
         // Can't use `map_err` as `#[track_caller]` is unstable on closures
         match self {
             Ok(ok) => Ok(ok),
@@ -192,7 +193,7 @@ where
     #[track_caller]
     fn and_then_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(T) -> Result<U, Report<C2>>,
     {
         match self {
@@ -205,7 +206,7 @@ where
     #[track_caller]
     fn map_ctx<U, F, C2>(self, op: F) -> Result<U, Report<C2>>
     where
-        C2: Reportable,
+        C2: ThinContext,
         F: FnOnce(T) -> U,
     {
         match self {
@@ -213,24 +214,6 @@ where
             Err(ctx) => Err(ctx.change_context(C2::value())),
         }
     }
-}
-
-// TODO convert to #[derive(Reportable)]
-#[macro_export]
-macro_rules! reportable {
-    ($context:ident) => {
-        impl $crate::Reportable for $context {
-            #[track_caller]
-            fn report<C: $crate::Context>(ctx: C) -> $crate::Report<Self> {
-                $crate::Report::new(ctx).change_context(Self)
-            }
-
-            #[track_caller]
-            fn value() -> Self {
-                $context
-            }
-        }
-    };
 }
 
 pub trait AttachExt {

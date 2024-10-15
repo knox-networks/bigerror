@@ -4,10 +4,10 @@ use error_stack::Context;
 
 use crate::{
     attachment::{self, simple_type_name, Display, FromTo, Unsupported},
-    ty, AttachExt, Index, Report, Reportable,
+    ty, AttachExt, Index, Report, ThinContext,
 };
 
-use crate::{attachment::DisplayDuration, reportable, Field};
+use crate::{attachment::DisplayDuration, Field};
 
 /// Used to enacpsulate opaque `dyn std::error::Error` types
 #[derive(Debug, thiserror::Error)]
@@ -19,8 +19,7 @@ pub struct BoxError(Box<dyn std::error::Error + 'static + Send + Sync>);
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
 pub struct BoxCoreError(Box<dyn CoreError>);
-#[derive(Debug, thiserror::Error)]
-#[error("DecodeError")]
+
 /// Represents errors emitted during while processing bytes into an object.
 /// * byte types can can be represented by objects such as `&[u8]`, `bytes::Bytes`, and `Vec<u8>`
 /// * used by codecs/serializers/deserializers
@@ -30,99 +29,85 @@ pub struct BoxCoreError(Box<dyn CoreError>);
 ///  * <https://docs.rs/tonic/latest/tonic/codec/trait.Encoder.html>
 ///  * <https://docs.rs/rkyv/latest/rkyv/ser/serializers/type.AllocSerializer.html>
 ///  * <https://docs.rs/serde/latest/serde/trait.Serializer.html>
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct DecodeError;
-reportable!(DecodeError);
 
 /// Emitted while turning an object into bytes.
 /// See [`DecodeError`] for more details.
-#[derive(Debug, thiserror::Error)]
-#[error("EncodeError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct EncodeError;
-reportable!(EncodeError);
 
 /// Emitted during an authorization/verification check
-#[derive(Debug, thiserror::Error)]
-#[error("AuthError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct AuthError;
-reportable!(AuthError);
 
-#[derive(Debug, thiserror::Error)]
-#[error("NetworkError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct NetworkError;
-reportable!(NetworkError);
 
 /// Emitted while processing a string (UTF-8 or otherwise).
 /// Usually associated with the [`std::str::FromStr`] trait and the `.parse::<SomeT>()` method
-#[derive(Debug, thiserror::Error)]
-#[error("ParseError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct ParseError;
-reportable!(ParseError);
 
 /// Represents the conversion of an `Option::<T>::None` into a [`Report`]
-#[derive(Debug, thiserror::Error)]
-#[error("NotFound")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct NotFound;
-reportable!(NotFound);
 
-#[derive(Debug, thiserror::Error)]
-#[error("DbError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct DbError;
-reportable!(DbError);
 
 /// An error that is related to filesystem operations such as those in [`std::fs`]
-#[derive(Debug, thiserror::Error)]
-#[error("FsError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct FsError;
-reportable!(FsError);
 
 /// Emitted during the startup/provisioning phase of a program
-#[derive(Debug, thiserror::Error)]
-#[error("SetupError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct SetupError;
-reportable!(SetupError);
 
 /// Emitted during transformations between [non scalar](https://en.wikipedia.org/w/index.php?title=Scalar_processor&useskin=vector#Scalar_data_type)
 /// objects (such as structs, enums, and unions).
-#[derive(Debug, thiserror::Error)]
-#[error("ConversionError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct ConversionError;
-reportable!(ConversionError);
 
-#[derive(Debug, thiserror::Error)]
-#[error("InvalidInput")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct InvalidInput;
-reportable!(InvalidInput);
 
-#[derive(Debug, thiserror::Error)]
-#[error("InvalidStatus")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct InvalidStatus;
-reportable!(InvalidStatus);
 
-#[derive(Debug, thiserror::Error)]
-#[error("InvalidState")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct InvalidState;
-reportable!(InvalidState);
 
 /// Emitted during runtime, indicates problems with input/default settings
-#[derive(Debug, thiserror::Error)]
-#[error("ConfigError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct ConfigError;
-reportable!(ConfigError);
 
 /// Typically emitted by a `build.rs` failure
-#[derive(Debug, thiserror::Error)]
-#[error("BuildError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct BuildError;
-reportable!(BuildError);
 
-#[derive(Debug, thiserror::Error)]
+#[derive(ThinContext)]
 #[error("{}", Field::new("timeout", DisplayDuration(*.0)))]
 pub struct Timeout(pub Duration);
 
-#[derive(Debug, thiserror::Error)]
-#[error("AssertionError")]
+#[derive(ThinContext)]
+#[bigerror(crate)]
 pub struct AssertionError;
-reportable!(AssertionError);
 
 pub trait CoreError: core::fmt::Debug + core::fmt::Display + Send + Sync + 'static {}
 

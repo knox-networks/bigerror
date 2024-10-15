@@ -40,8 +40,8 @@ impl Builder {
 }
 
 pub struct Attributes {
-    #[allow(unused)]
-    pub display: LitStr,
+    // TODO port #[display(...)]
+    pub has_display: bool,
     pub crate_path: Path,
 }
 impl Attributes {
@@ -56,16 +56,13 @@ impl Attributes {
                 attr.parse_nested_meta(|meta| builder.parse_meta(meta))?;
             }
         }
-        let display = builder
-            .display
-            .take()
-            .unwrap_or_else(|| LitStr::new(&input.ident.to_string(), input.ident.span()));
+        let has_display = builder.display.is_some();
         let crate_path = builder
             .crate_path
             .take()
             .unwrap_or_else(|| parse_quote! { ::bigerror });
         Ok(Self {
-            display,
+            has_display,
             crate_path,
         })
     }
