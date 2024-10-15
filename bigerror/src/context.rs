@@ -162,7 +162,7 @@ impl NotFound {
     }
 
     pub fn with_index<T, K: Display>(key: K) -> Report<Self> {
-        Self::with_kv(Index(key), ty!(T))
+        Self::attach_kv(Index(key), ty!(T))
     }
 }
 

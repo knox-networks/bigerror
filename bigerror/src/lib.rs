@@ -34,6 +34,7 @@ where
     Self: Sized + Context,
 {
     const VALUE: Self;
+
     fn report<C: Context>(ctx: C) -> Report<Self> {
         Report::new(ctx).change_context(Self::VALUE)
     }
@@ -61,7 +62,7 @@ where
         Self::attach(Dbg(value))
     }
     #[track_caller]
-    fn with_kv<K, V>(key: K, value: V) -> Report<Self>
+    fn attach_kv<K, V>(key: K, value: V) -> Report<Self>
     where
         K: Display,
         V: Display,
@@ -69,7 +70,7 @@ where
         Self::attach(KeyValue(key, value))
     }
     #[track_caller]
-    fn with_kv_dbg<K, V>(key: K, value: V) -> Report<Self>
+    fn attach_kv_dbg<K, V>(key: K, value: V) -> Report<Self>
     where
         K: Display,
         V: Debug,
@@ -77,7 +78,7 @@ where
         Self::attach(KeyValue::dbg(key, value))
     }
     #[track_caller]
-    fn with_field_status<S: Display>(key: &'static str, status: S) -> Report<Self> {
+    fn attach_field<S: Display>(key: &'static str, status: S) -> Report<Self> {
         Self::attach(Field::new(key, status))
     }
 
@@ -87,23 +88,23 @@ where
     }
 
     #[track_caller]
-    fn with_variant<A: Display>(value: A) -> Report<Self> {
-        Self::with_kv(attachment::Type::of::<A>(), value)
+    fn attach_ty_val<A: Display>(value: A) -> Report<Self> {
+        Self::attach_kv(ty!(A), value)
     }
 
     #[track_caller]
-    fn with_variant_dbg<A: Debug>(value: A) -> Report<Self> {
-        Self::with_kv_dbg(attachment::Type::of::<A>(), value)
+    fn attach_ty_dbg<A: Debug>(value: A) -> Report<Self> {
+        Self::attach_kv_dbg(ty!(A), value)
     }
 
     #[track_caller]
-    fn with_type<A>() -> Report<Self> {
-        Self::attach(attachment::Type::of::<A>())
+    fn attach_ty<A>() -> Report<Self> {
+        Self::attach(ty!(A))
     }
 
     #[track_caller]
-    fn with_type_status<A: Send + Sync + 'static>(status: impl Display) -> Report<Self> {
-        Self::attach(Field::new(attachment::Type::of::<A>(), status))
+    fn attach_ty_status<A: Send + Sync + 'static>(status: impl Display) -> Report<Self> {
+        Self::attach(Field::new(ty!(A), status))
     }
 }
 
@@ -238,12 +239,12 @@ pub trait AttachExt {
         A: Debug;
 
     #[must_use]
-    fn attach_variant<A>(self, value: A) -> Self
+    fn attach_ty_val<A>(self, value: A) -> Self
     where
         Self: Sized,
         A: Display,
     {
-        self.attach_kv(attachment::Type::of::<A>(), value)
+        self.attach_kv(ty!(A), value)
     }
 }
 
@@ -484,7 +485,7 @@ impl<T> OptionReport<T> for Option<T> {
         // self.ok_or_else(|| Report::new(NotFound))
         match self {
             Some(v) => Ok(v),
-            None => Err(NotFound::with_type::<T>()),
+            None => Err(NotFound::attach_ty::<T>()),
         }
     }
 
@@ -497,7 +498,7 @@ impl<T> OptionReport<T> for Option<T> {
     {
         match self {
             Some(v) => Ok(v),
-            None => Err(NotFound::with_kv(key, value)),
+            None => Err(NotFound::attach_kv(key, value)),
         }
     }
 
@@ -702,10 +703,10 @@ mod test {
     }
 
     #[test]
-    fn with_type_status() {
+    fn attach_ty_status() {
         fn try_even(num: usize) -> Result<(), Report<MyError>> {
             if num % 2 != 0 {
-                return Err(InvalidInput::with_type_status::<usize>(Invalid).into_ctx());
+                return Err(InvalidInput::attach_ty_status::<usize>(Invalid).into_ctx());
             }
             Ok(())
         }
@@ -744,11 +745,11 @@ mod test {
     }
 
     #[test]
-    fn attach_variant() {
+    fn attach_ty_val() {
         fn compare(mine: usize, other: usize) -> Result<(), Report<MyError>> {
             if other != mine {
                 bail!(InvalidInput::attach("expected my number!")
-                    .attach_variant(other)
+                    .attach_ty_val(other)
                     .into_ctx());
             }
             Ok(())
@@ -760,7 +761,7 @@ mod test {
         assert_err!(compare(my_number, other_number));
     }
 
-    // should behave the same as `test::attach_variant`
+    // should behave the same as `test::attach_ty_val`
     // but displays lazy allocation of attachment
     #[test]
     fn attach_kv_macro() {
